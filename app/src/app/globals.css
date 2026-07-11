@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-frock-cream: #faf9f5;
+  --color-frock-red: #d6402b;
+  --color-frock-ink: #201b15;
+  --color-frock-blush: #f5dcd3;
+  --color-frock-muted: #9a8f87;
+
+  --font-serif: Georgia, serif;
+  --font-sans: system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-frock-cream);
+  color: var(--color-frock-ink);
+}

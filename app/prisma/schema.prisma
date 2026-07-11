@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Business models ──────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  accounts          Account[]
+  sessions          Session[]
+  profile           UserProfile?
+  sizes             Size[]
+  brandPreferences  BrandPreference[]
+  bestOutfitPhotos  BestOutfitPhoto[]
+  wardrobeItems     WardrobeItem[]
+  occasions         Occasion[]
+  outfitSuggestions OutfitSuggestion[]
+}
+
+model UserProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coloring       String?
+  bodyShape      String?
+  styleSignals   String?
+  highlightPrefs String?
+  downplayPrefs  String?
+  updatedAt      DateTime @updatedAt
+}
+
+model Size {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String
+  sizeValue String
+  region    String?
+
+  @@unique([userId, category])
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  websiteUrl  String?
+  createdAt   DateTime @default(now())
+
+  preferences BrandPreference[]
+}
+
+model BrandPreference {
+  id           String @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandId      String
+  brand        Brand  @relation(fields: [brandId], references: [id])
+  wearCategory String
+
+  @@unique([userId, brandId, wearCategory])
+}
+
+model BestOutfitPhoto {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photoUrl              String
+  extractedStyleSignals String?
+  uploadedAt            DateTime @default(now())
+}
+
+model WardrobeItem {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType       String
+  color          String?
+  pattern        String?
+  fabricType     String?
+  formalityLevel String?
+  season         String?
+  warmthLevel    String?
+  tags           String   @default("[]")
+  imageUrl       String?
+  source         String?
+  isActive       Boolean  @default(true)
+  addedAt        DateTime @default(now())
+
+  outfitItems OutfitItem[]
+}
+
+model Occasion {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  occasionType   String
+  description    String?
+  eventDate      DateTime?
+  formalityLevel String?
+  createdAt      DateTime  @default(now())
+
+  suggestions OutfitSuggestion[]
+}
+
+model OutfitSuggestion {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  occasionId      String?
+  occasion        Occasion? @relation(fields: [occasionId], references: [id])
+  vibeNote        String?
+  version         Int       @default(1)
+  weatherSnapshot String?
+  generatedAt     DateTime  @default(now())
+
+  outfitItems OutfitItem[]
+  feedback    OutfitFeedback[]
+}
+
+model OutfitItem {
+  outfitSuggestionId String
+  outfitSuggestion   OutfitSuggestion @relation(fields: [outfitSuggestionId], references: [id], onDelete: Cascade)
+  wardrobeItemId     String
+  wardrobeItem       WardrobeItem     @relation(fields: [wardrobeItemId], references: [id])
+
+  @@id([outfitSuggestionId, wardrobeItemId])
+}
+
+model OutfitFeedback {
+  id                 String   @id @default(cuid())
+  outfitSuggestionId String
+  outfitSuggestion   OutfitSuggestion @relation(fields: [outfitSuggestionId], references: [id], onDelete: Cascade)
+  feedbackSource     String
+  transcript         String?
+  willWear           Boolean?
+  freeText           String?
+  createdAt          DateTime @default(now())
+}
+
+// ─── NextAuth required models ─────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
