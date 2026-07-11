@@ -1,17 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  --color-frock-cream: #faf9f5;
-  --color-frock-red: #d6402b;
-  --color-frock-ink: #201b15;
-  --color-frock-blush: #f5dcd3;
-  --color-frock-muted: #9a8f87;
+  --color-frock-cream: #F8F3EB;
+  --color-frock-cream-2: #F0E8DB;
+  --color-frock-white: #FFFFFF;
+  --color-frock-ink: #201B15;
+  --color-frock-ink-2: #554C41;
+  --color-frock-ink-3: #8C8375;
+  --color-frock-rouge: #D6402B;
+  --color-frock-red: #D6402B;
+  --color-frock-rouge-deep: #B02E1C;
+  --color-frock-blush: #F5DCD3;
+  --color-frock-wine: #5E1F1A;
+  --color-frock-brass: #A98A52;
+  --color-frock-success: #4F7B58;
+  --color-frock-success-tint: #E3EDE4;
+  --color-frock-muted: #8C8375;
 
-  --font-serif: Georgia, serif;
-  --font-sans: system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Instrument Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
 body {
-  background-color: var(--color-frock-cream);
-  color: var(--color-frock-ink);
+  background-color: #F8F3EB;
+  color: #201B15;
+  font-family: 'Instrument Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
+@keyframes frkUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes frkBar {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+
+@keyframes frkBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96%           { transform: scaleY(0.1); }
+}
+
+@keyframes frkFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes frkFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes frkPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
 }

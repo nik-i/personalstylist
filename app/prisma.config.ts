@@ -1,4 +1,3 @@
-import path from "node:path";
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({
@@ -7,6 +6,6 @@ export default defineConfig({
     seed: "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
   },
   datasource: {
-    url: `file:${path.join(process.cwd(), "prisma", "dev.db")}`,
+    url: process.env.DATABASE_URL ?? "postgresql://frock:frock_dev@localhost:5432/frock",
   },
 });
