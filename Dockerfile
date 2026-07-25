@@ -31,9 +31,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Schema + migrations so prisma migrate deploy can run at startup
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
 
-# Prisma CLI + engines needed to run migrations
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Prisma query engine (needed by the Next.js app at runtime)
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
@@ -41,5 +41,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Run migrations then start the server
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+# Run migrations (plain pg — no Prisma CLI) then start the server
+CMD ["sh", "-c", "node scripts/migrate.js && node server.js"]
