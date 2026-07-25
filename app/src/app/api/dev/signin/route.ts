@@ -28,9 +28,13 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
   const base = `${proto}://${host}`;
   const response = NextResponse.redirect(new URL(redirectTo, base));
-  response.cookies.set("authjs.session-token", TOKEN, {
+  // NextAuth v5 prefixes the session cookie with __Secure- on HTTPS (useSecureCookies).
+  // Use the same protocol detection so our manually-set cookie matches what auth() looks for.
+  const isHttps = proto === "https";
+  const cookieName = isHttps ? "__Secure-authjs.session-token" : "authjs.session-token";
+  response.cookies.set(cookieName, TOKEN, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
