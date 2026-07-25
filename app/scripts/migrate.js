@@ -72,11 +72,16 @@ async function main() {
       console.log(`[migrate] applied: ${dir}`);
     }
 
-    // Seed the demo user so MCP_USER_ID can reference it without auth.
+    // Ensure the demo user exists with the known ID that MCP_USER_ID points to.
+    // Remove any prior demo@frock.app row with a different ID (cascade-deletes its data),
+    // then upsert so repeated deploys are idempotent.
+    await client.query(`
+      DELETE FROM "User" WHERE email = 'demo@frock.app' AND id != 'demo-user'
+    `);
     await client.query(`
       INSERT INTO "User" (id, email, name, "createdAt")
       VALUES ('demo-user', 'demo@frock.app', 'Demo User', now())
-      ON CONFLICT (email) DO NOTHING
+      ON CONFLICT (id) DO UPDATE SET email = 'demo@frock.app', name = 'Demo User'
     `);
     console.log('[migrate] demo user ready');
 
