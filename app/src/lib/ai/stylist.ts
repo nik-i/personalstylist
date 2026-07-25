@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
 
 export type WardrobeItemInput = {
   id: string;
@@ -121,7 +123,7 @@ Products must have exactly 3 items, one per price tier. If confidence is low (sp
 
   const userPrompt = `Goal: ${input.goal.type}${input.goal.description ? ` — ${input.goal.description}` : ""}${input.goal.frustration ? `\nBiggest wardrobe frustration: ${input.goal.frustration}` : ""}`;
 
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: "claude-sonnet-5",
     max_tokens: 1200,
     system: systemPrompt,
@@ -178,7 +180,7 @@ Respond ONLY with valid JSON — no extra text, no markdown:
 }
 Use exact IDs from the wardrobe list above. Each outfit must use different combinations.`;
 
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: "claude-sonnet-5",
     max_tokens: 800,
     system: systemPrompt,

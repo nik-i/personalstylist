@@ -1,7 +1,9 @@
 import OpenAI from "openai";
 import type { ExtractedItem } from "@/types/extraction";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getClient() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 type SupportedMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
@@ -12,7 +14,7 @@ export async function extractClothingFromImage(
   mediaType: SupportedMediaType,
   sourcePhotoIndex: number
 ): Promise<ExtractedItem[]> {
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: "gpt-4o",
     max_tokens: 1024,
     messages: [
