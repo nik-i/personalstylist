@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import { join } from "path";
-import { randomUUID } from "crypto";
 
 const SUPPORTED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,14 +11,10 @@ export async function POST(req: NextRequest) {
     }
 
     const mimeType = SUPPORTED.has(file.type) ? file.type : "image/jpeg";
-    const ext = EXT[mimeType] ?? "jpg";
-    const filename = `${randomUUID()}.${ext}`;
-    const dest = join(process.cwd(), "public", "wardrobe-images", filename);
-
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(dest, buffer);
+    const dataUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
 
-    return NextResponse.json({ url: `/wardrobe-images/${filename}` });
+    return NextResponse.json({ url: dataUrl });
   } catch (err) {
     console.error("Image upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
