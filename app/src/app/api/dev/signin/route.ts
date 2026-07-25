@@ -1,19 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// Dev-only shortcut — signs in as the seed user without email verification.
-// Only works when NODE_ENV === "development".
-export async function GET() {
-  if (process.env.NODE_ENV !== "development") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+// Demo sign-in — finds or creates a demo user and sets a session cookie.
+// Works in all environments so the deployed capstone app is accessible without email auth.
+export async function GET(req: NextRequest) {
+  const user = await prisma.user.upsert({
+    where: { email: "demo@frock.app" },
+    update: {},
+    create: { email: "demo@frock.app", name: "Demo User" },
+  });
 
-  const user = await prisma.user.findUnique({ where: { email: "test@frock.app" } });
-  if (!user) {
-    return NextResponse.json({ error: "Seed user not found — run seed first" }, { status: 404 });
-  }
-
-  const TOKEN = "test-session-token-epic-b";
+  const TOKEN = "demo-session-token";
   await prisma.session.upsert({
     where: { sessionToken: TOKEN },
     update: { expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
@@ -24,10 +21,12 @@ export async function GET() {
     },
   });
 
-  const response = NextResponse.redirect(new URL("/wardrobe", "http://localhost:3000"));
+  const redirectTo = req.nextUrl.searchParams.get("redirect") ?? "/onboarding/landing";
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin;
+  const response = NextResponse.redirect(new URL(redirectTo, base));
   response.cookies.set("authjs.session-token", TOKEN, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
