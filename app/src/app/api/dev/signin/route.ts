@@ -22,7 +22,11 @@ export async function GET(req: NextRequest) {
   });
 
   const redirectTo = req.nextUrl.searchParams.get("redirect") ?? "/onboarding/landing";
-  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin;
+  // Azure Container Apps binds on 0.0.0.0:3000; req.nextUrl.origin reflects that internal
+  // address, not the public hostname. Read the forwarded headers the proxy sets instead.
+  const proto = req.headers.get("x-forwarded-proto")?.split(",")[0].trim() ?? "https";
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+  const base = `${proto}://${host}`;
   const response = NextResponse.redirect(new URL(redirectTo, base));
   response.cookies.set("authjs.session-token", TOKEN, {
     httpOnly: true,
