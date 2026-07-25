@@ -1,0 +1,11 @@
+{
+  "summary": { "pass_rate": 0.5, "passed": 3, "failed": 3, "total": 6 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": false, "evidence": "Agent fetched wardrobe manually and reasoned without running the outfit-suggester engine or driver.mjs." },
+    { "text": "Suggested outfit is casual or smart-casual — fitting a relaxed indoor birthday party", "passed": true, "evidence": "Cream polka dot midi dress (smart-casual, summer) — good match for a casual but fun indoor party." },
+    { "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)", "passed": true, "evidence": "Mentions 'dress it up with earrings or a heel' for evening feel. Red gown correctly excluded as too formal." },
+    { "text": "Response does not suggest buying any new items", "passed": false, "evidence": "Suggests 'earrings or a heel', 'colourful bag', 'simple belt, statement earrings' — accessories not confirmed in wardrobe." },
+    { "text": "Tone is fun and encouraging in Maya's voice — matches the casual party vibe", "passed": false, "evidence": "Uses section headers (TOP PICK, SOLID ALTERNATIVE, CASUAL BUT CUTE, SKIP FOR THIS ONE) — structured editorial, not Maya's warm first-person voice." },
+    { "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe", "passed": true, "evidence": "All recommended outfits reference real items: cream polka dot dress, black midi dress, pink blouse + blue jeans." }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "run_id": "birthday-party-casual-without_skill",
+  "expectations": [
+    {
+      "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+      "passed": true,
+      "evidence": "This without-skill agent independently chose to run the outfit-suggester engine, citing it in the response. Pulled specific items (black graphic tee, indigo jeans, white sneakers) and explained the score."
+    },
+    {
+      "text": "Suggested outfit is casual or smart-casual — fitting a relaxed indoor birthday party",
+      "passed": true,
+      "evidence": "Black graphic tee + indigo straight-leg jeans + white sneakers — correctly casual for a friend's flat birthday party."
+    },
+    {
+      "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)",
+      "passed": true,
+      "evidence": "Mentions lifting the look for Friday evening ('swap sneakers for a chunky loafer or low block heel'), evening accessory tips."
+    },
+    {
+      "text": "Response does not suggest buying any new items",
+      "passed": false,
+      "evidence": "Suggests 'chunky loafer or a low block heel if you have one', 'gold or silver necklace (layered if you've got it)', 'small shoulder bag or clutch' — while hedged with 'if you have one', some suggestions clearly go beyond the existing wardrobe."
+    },
+    {
+      "text": "Tone is fun and encouraging in Maya's voice — matches the casual party vibe",
+      "passed": false,
+      "evidence": "Tone is more editorial/advisor than Maya's voice — uses headers (TOP PICK, ALTERNATIVE 1, ALTERNATIVE 2, WHAT TO AVOID), ends with 'Have a great time at the party!' which is friendly but not distinctly Maya."
+    }
+  ],
+  "pass_rate": 0.6
+}

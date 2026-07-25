@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "skill_name": "style-me",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-07-25T16:10:07Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 69.4,
+        "tokens": 19606,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "Agent explicitly ran driver.mjs --stdin with place: 'restaurant', activity: 'dinner date', month: 7, time: '7pm', mood prefixed with outdoor signal. Top outfit scored 18."
+        },
+        {
+          "text": "Suggested outfit is smart-casual or higher formality \u2014 appropriate for a rooftop dinner bar",
+          "passed": true,
+          "evidence": "Cream silk blouse + indigo straight-leg jeans + white sneakers \u2014 smart-casual, appropriate for a bar/dinner setting."
+        },
+        {
+          "text": "Response acknowledges the outdoor setting as a factor in the suggestion",
+          "passed": true,
+          "evidence": "Explicitly mentions outdoor terrain, July warmth, and white sneakers chosen for outdoor practicality."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": true,
+          "evidence": "All items from sample wardrobe. Note clarifies 'connect your real wardrobe for a pick that's truly yours.'"
+        },
+        {
+          "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list",
+          "passed": true,
+          "evidence": "Opens with context, explains each piece with personality, closes with alternatives. 'You'll look like you put thought into it without looking like you tried too hard.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 63.7,
+        "tokens": 19857,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "Agent ran driver.mjs with place: 'office', activity: 'client meeting', time: 'morning', month: 7. Top outfit scored 19/20 \u2014 white shirt + tailored trousers + loafers."
+        },
+        {
+          "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting",
+          "passed": true,
+          "evidence": "White shirt + tailored trousers (black) + loafers (black) \u2014 textbook business formality from the wardrobe engine."
+        },
+        {
+          "text": "Response acknowledges the 'polished but not overdressed' mood \u2014 not suggesting formal gala attire",
+          "passed": true,
+          "evidence": "'The client's attention stays on what you're saying, not what you're wearing.' Offers silk blouse alternative."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": true,
+          "evidence": "All items from sample wardrobe. 'This suggestion is based on a sample wardrobe.'"
+        },
+        {
+          "text": "Tone is warm and direct in Maya's voice, not generic styling advice",
+          "passed": true,
+          "evidence": "Conversational and reasoned \u2014 explains why each item works, ends with strategic insight about attention management."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 62.3,
+        "tokens": 20102,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "Agent ran driver.mjs with place: 'bar', activity: 'birthday party', time: 'evening', mood: 'fun and put together', month: 7. Top outfit scored 16."
+        },
+        {
+          "text": "Suggested outfit is casual or smart-casual \u2014 fitting a relaxed indoor birthday party",
+          "passed": true,
+          "evidence": "Cream silk blouse + indigo straight-leg jeans + white sneakers \u2014 smart-casual, well-matched to a casual indoor evening party."
+        },
+        {
+          "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)",
+          "passed": true,
+          "evidence": "Silk blouse selected for evening light quality; suggests tucking for shape; velvet jumpsuit noted as evening-appropriate alternative."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": true,
+          "evidence": "All items from sample wardrobe. Sample wardrobe caveat clearly stated at end."
+        },
+        {
+          "text": "Tone is fun and encouraging in Maya's voice \u2014 matches the casual party vibe",
+          "passed": true,
+          "evidence": "'Fun and put together without looking like you tried too hard.' Blouse described as 'the piece that does the work', sneakers called 'clean, easy'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 89.1,
+        "tokens": 18843,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": false,
+          "evidence": "Agent gave entirely generic fashion advice (slip dress, block-heeled sandals, blazer) with no reference to running the outfit-suggester engine or any specific wardrobe items."
+        },
+        {
+          "text": "Suggested outfit is smart-casual or higher formality \u2014 appropriate for a rooftop dinner bar",
+          "passed": true,
+          "evidence": "Suggested wrap dress / separates with heeled sandals \u2014 appropriate formality for a dinner date setting."
+        },
+        {
+          "text": "Response acknowledges the outdoor setting as a factor in the suggestion",
+          "passed": true,
+          "evidence": "Detailed rooftop/weather analysis: temperature, wind, rooftop grating stilettos warning, layer recommendation."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": false,
+          "evidence": "Suggests 'a slip dress or wrap dress', 'block-heeled sandals', 'a lightweight blazer' \u2014 no wardrobe-only constraint applied."
+        },
+        {
+          "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list",
+          "passed": false,
+          "evidence": "Structured as a fashion editorial with section headers (THE LOOK, SHOES, LAYER) \u2014 helpful but not Maya's personal stylist voice."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 68.7,
+        "tokens": 16685,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": false,
+          "evidence": "Agent gave a generic fashion guide with headers like CORE PIECE, SHOES, FINISHING DETAILS. No engine run, no specific wardrobe items referenced."
+        },
+        {
+          "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting",
+          "passed": true,
+          "evidence": "Blazer + shell blouse + tailored trousers \u2014 correctly identifies business formality level."
+        },
+        {
+          "text": "Response acknowledges the 'polished but not overdressed' mood \u2014 not suggesting formal gala attire",
+          "passed": true,
+          "evidence": "'Sharp, polished, authoritative \u2014 without tipping into formal overdrive.' Also covers 'What to avoid'."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": false,
+          "evidence": "Recommends buying: 'a lightweight blazer', 'fitted solid-color shell blouse', 'classic block-heel pumps', 'structured tote' \u2014 entirely unconstrained by wardrobe."
+        },
+        {
+          "text": "Tone is warm and direct in Maya's voice, not generic styling advice",
+          "passed": false,
+          "evidence": "Structured styling guide with bold headers, bullet points, WHAT TO AVOID section \u2014 useful but editorial, not Maya's voice."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6,
+        "passed": 3,
+        "failed": 2,
+        "total": 5,
+        "time_seconds": 72.7,
+        "tokens": 22621,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "This without-skill agent independently ran the outfit-suggester engine, citing it in the response. Pulled specific items and explained the score."
+        },
+        {
+          "text": "Suggested outfit is casual or smart-casual \u2014 fitting a relaxed indoor birthday party",
+          "passed": true,
+          "evidence": "Black graphic tee + indigo straight-leg jeans + white sneakers \u2014 correctly casual for a friend's flat birthday party."
+        },
+        {
+          "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)",
+          "passed": true,
+          "evidence": "Mentions lifting the look for Friday evening, evening accessory tips."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": false,
+          "evidence": "Suggests 'chunky loafer or a low block heel if you have one', 'gold or silver necklace', 'small shoulder bag or clutch' \u2014 some suggestions go beyond the existing wardrobe."
+        },
+        {
+          "text": "Tone is fun and encouraging in Maya's voice \u2014 matches the casual party vibe",
+          "passed": false,
+          "evidence": "More editorial than Maya's voice \u2014 uses headers (TOP PICK, ALTERNATIVE 1, WHAT TO AVOID). Friendly but not distinctly Maya."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 65.1333,
+        "stddev": 3.7608,
+        "min": 62.3,
+        "max": 69.4
+      },
+      "tokens": {
+        "mean": 19855.0,
+        "stddev": 248.006,
+        "min": 19606,
+        "max": 20102
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.4667,
+        "stddev": 0.1155,
+        "min": 0.4,
+        "max": 0.6
+      },
+      "time_seconds": {
+        "mean": 76.8333,
+        "stddev": 10.8099,
+        "min": 68.7,
+        "max": 89.1
+      },
+      "tokens": {
+        "mean": 19383.0,
+        "stddev": 3004.6171,
+        "min": 16685,
+        "max": 22621
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.53",
+      "time_seconds": "-11.7",
+      "tokens": "+472"
+    }
+  },
+  "notes": []
+}

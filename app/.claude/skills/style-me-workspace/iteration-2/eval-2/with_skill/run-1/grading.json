@@ -1,0 +1,11 @@
+{
+  "summary": { "pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": true, "evidence": "Agent ran fetch-wardrobe.cjs then driver.mjs --stdin with place: 'bar', activity: 'birthday party', time: 'evening', month: 7. Top outfit (pink cape blouse + blue jeans) scored 10." },
+    { "text": "Suggested outfit is casual or smart-casual — fitting a relaxed indoor birthday party", "passed": true, "evidence": "Pink cape blouse + blue straight-leg jeans — casual/smart-casual, perfectly calibrated for a casual flat birthday party." },
+    { "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)", "passed": true, "evidence": "Cape blouse selected for 'celebratory' evening quality; suggests 'bold lip or some earrings' to elevate for the evening." },
+    { "text": "Response does not suggest buying any new items", "passed": true, "evidence": "No buying suggestions. All mentioned items are from real wardrobe. Accessories advice ('bold lip or earrings') is cosmetic, not purchases." },
+    { "text": "Tone is fun and encouraging in Maya's voice — matches the casual party vibe", "passed": true, "evidence": "'It's got just enough personality to say I'm here for a good time without needing a whole statement piece.' Fun, direct, on-brand." },
+    { "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe", "passed": true, "evidence": "Pink cape blouse and blue straight-leg jeans confirmed real wardrobe items fetched via fetch-wardrobe.cjs." }
+  ]
+}

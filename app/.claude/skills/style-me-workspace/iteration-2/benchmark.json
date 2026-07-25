@@ -1,0 +1,353 @@
+{
+  "metadata": {
+    "skill_name": "style-me",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-07-25T16:19:38Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 54.7,
+        "tokens": 21291,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "Agent ran fetch-wardrobe.cjs then driver.mjs --stdin with place: 'restaurant', activity: 'dinner date', time: '7pm', month: 7, mood prefixed with outdoor signal. Score 10."
+        },
+        {
+          "text": "Suggested outfit is smart-casual or higher formality \u2014 appropriate for a rooftop dinner bar",
+          "passed": true,
+          "evidence": "Pink cape blouse + blue straight-leg jeans \u2014 smart-casual, appropriate for a 7pm rooftop dinner bar."
+        },
+        {
+          "text": "Response acknowledges the outdoor setting as a factor in the suggestion",
+          "passed": true,
+          "evidence": "Mentions light fabric for summer heat and suggests bringing a layer for the rooftop breeze."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": true,
+          "evidence": "No buying suggestions. Accessories advice is absent; 'light layer worth tucking in your bag' implies using existing items."
+        },
+        {
+          "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list",
+          "passed": true,
+          "evidence": "'The cape blouse is the star here \u2014 it has just enough personality to feel intentional for a date without veering into overdressed territory.' Warm and specific."
+        },
+        {
+          "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe",
+          "passed": true,
+          "evidence": "Pink cape blouse and blue straight-leg jeans are both confirmed real wardrobe items fetched via fetch-wardrobe.cjs."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 64.8,
+        "tokens": 22174,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "Agent ran fetch-wardrobe.cjs then driver.mjs --stdin with place: 'office', activity: 'client meeting', time: 'morning', month: 7. Top result scored 13."
+        },
+        {
+          "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting",
+          "passed": true,
+          "evidence": "Black midi dress \u2014 smart-casual formality, all-season. Engine mapped office + morning to business context; dress scored highest."
+        },
+        {
+          "text": "Response acknowledges the 'polished but not overdressed' mood \u2014 not suggesting formal gala attire",
+          "passed": true,
+          "evidence": "'Black reads as authoritative without trying; the midi length keeps it professional rather than cocktail-ready.' Polished-not-stiff tone throughout."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": true,
+          "evidence": "No buying suggestions. Flags that no footwear was found in the wardrobe \u2014 correctly surfaces the gap rather than inventing items."
+        },
+        {
+          "text": "Tone is warm and direct in Maya's voice, not generic styling advice",
+          "passed": true,
+          "evidence": "'It's the kind of piece that says I know what I'm doing without announcing itself.' Personal, confident, direct."
+        },
+        {
+          "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe",
+          "passed": true,
+          "evidence": "Black midi dress confirmed real wardrobe item. Agent explicitly notes it ran fetch-wardrobe.cjs and got 6 real items."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 62.8,
+        "tokens": 21588,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": true,
+          "evidence": "Agent ran fetch-wardrobe.cjs then driver.mjs --stdin with place: 'bar', activity: 'birthday party', time: 'evening', month: 7. Top outfit (pink cape blouse + blue jeans) scored 10."
+        },
+        {
+          "text": "Suggested outfit is casual or smart-casual \u2014 fitting a relaxed indoor birthday party",
+          "passed": true,
+          "evidence": "Pink cape blouse + blue straight-leg jeans \u2014 casual/smart-casual, perfectly calibrated for a casual flat birthday party."
+        },
+        {
+          "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)",
+          "passed": true,
+          "evidence": "Cape blouse selected for 'celebratory' evening quality; suggests 'bold lip or some earrings' to elevate for the evening."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": true,
+          "evidence": "No buying suggestions. All mentioned items are from real wardrobe. Accessories advice ('bold lip or earrings') is cosmetic, not purchases."
+        },
+        {
+          "text": "Tone is fun and encouraging in Maya's voice \u2014 matches the casual party vibe",
+          "passed": true,
+          "evidence": "'It's got just enough personality to say I'm here for a good time without needing a whole statement piece.' Fun, direct, on-brand."
+        },
+        {
+          "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe",
+          "passed": true,
+          "evidence": "Pink cape blouse and blue straight-leg jeans confirmed real wardrobe items fetched via fetch-wardrobe.cjs."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 3,
+        "failed": 3,
+        "total": 6,
+        "time_seconds": 39.8,
+        "tokens": 17747,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": false,
+          "evidence": "Agent fetched wardrobe manually and reasoned without running the outfit-suggester engine. No driver.mjs call."
+        },
+        {
+          "text": "Suggested outfit is smart-casual or higher formality \u2014 appropriate for a rooftop dinner bar",
+          "passed": true,
+          "evidence": "Black midi dress (smart-casual) is appropriate for a rooftop dinner date at 7pm."
+        },
+        {
+          "text": "Response acknowledges the outdoor setting as a factor in the suggestion",
+          "passed": true,
+          "evidence": "Explicitly addresses rooftop breeze: 'bring a light jacket, blazer, or wrap to layer over the dress as the night cools down.'"
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": false,
+          "evidence": "Suggests 'bring a light jacket, blazer, or wrap' and 'heeled sandals or strappy flats' without verifying these exist in the wardrobe."
+        },
+        {
+          "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list",
+          "passed": false,
+          "evidence": "Uses section headers (TOP PICK, RUNNER-UP, WHAT TO AVOID FROM YOUR WARDROBE) \u2014 editorial rather than Maya's personal voice."
+        },
+        {
+          "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe",
+          "passed": true,
+          "evidence": "Black midi dress and cream polka dot midi dress are real wardrobe items. Agent fetched wardrobe and referenced actual items."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 3,
+        "failed": 3,
+        "total": 6,
+        "time_seconds": 43.2,
+        "tokens": 18176,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": false,
+          "evidence": "Agent fetched wardrobe via the script but did not run the outfit-suggester engine. Reasoned manually from the item list."
+        },
+        {
+          "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting",
+          "passed": true,
+          "evidence": "Black midi dress (smart-casual) \u2014 correctly identified as appropriate for a client presentation."
+        },
+        {
+          "text": "Response acknowledges the 'polished but not overdressed' mood \u2014 not suggesting formal gala attire",
+          "passed": true,
+          "evidence": "Explicitly addresses the mood: 'smart-casual is exactly the register you want: elevated enough to command the room, relaxed enough that you're not outpacing the dress code.'"
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": false,
+          "evidence": "Suggests 'structured blazer or tailored cardigan', 'pointed-toe heels or clean block-heeled mules', 'structured handbag or tote' \u2014 items not confirmed in wardrobe."
+        },
+        {
+          "text": "Tone is warm and direct in Maya's voice, not generic styling advice",
+          "passed": false,
+          "evidence": "Uses styling-guide structure with 'To style it up a notch' and bullet lists for accessories. Good advice but not Maya's first-person voice."
+        },
+        {
+          "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe",
+          "passed": true,
+          "evidence": "Black midi dress and cream polka dot dress are real items. Agent fetched wardrobe and referenced actual items by name."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 3,
+        "failed": 3,
+        "total": 6,
+        "time_seconds": 42.4,
+        "tokens": 17841,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+          "passed": false,
+          "evidence": "Agent fetched wardrobe manually and reasoned without running the outfit-suggester engine or driver.mjs."
+        },
+        {
+          "text": "Suggested outfit is casual or smart-casual \u2014 fitting a relaxed indoor birthday party",
+          "passed": true,
+          "evidence": "Cream polka dot midi dress (smart-casual, summer) \u2014 good match for a casual but fun indoor party."
+        },
+        {
+          "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)",
+          "passed": true,
+          "evidence": "Mentions 'dress it up with earrings or a heel' for evening feel. Red gown correctly excluded as too formal."
+        },
+        {
+          "text": "Response does not suggest buying any new items",
+          "passed": false,
+          "evidence": "Suggests 'earrings or a heel', 'colourful bag', 'simple belt, statement earrings' \u2014 accessories not confirmed in wardrobe."
+        },
+        {
+          "text": "Tone is fun and encouraging in Maya's voice \u2014 matches the casual party vibe",
+          "passed": false,
+          "evidence": "Uses section headers (TOP PICK, SOLID ALTERNATIVE, CASUAL BUT CUTE, SKIP FOR THIS ONE) \u2014 structured editorial, not Maya's warm first-person voice."
+        },
+        {
+          "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe",
+          "passed": true,
+          "evidence": "All recommended outfits reference real items: cream polka dot dress, black midi dress, pink blouse + blue jeans."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 60.7667,
+        "stddev": 5.3482,
+        "min": 54.7,
+        "max": 64.8
+      },
+      "tokens": {
+        "mean": 21684.3333,
+        "stddev": 449.3132,
+        "min": 21291,
+        "max": 22174
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.5,
+        "stddev": 0.0,
+        "min": 0.5,
+        "max": 0.5
+      },
+      "time_seconds": {
+        "mean": 41.8,
+        "stddev": 1.7776,
+        "min": 39.8,
+        "max": 43.2
+      },
+      "tokens": {
+        "mean": 17921.3333,
+        "stddev": 225.5002,
+        "min": 17747,
+        "max": 18176
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.50",
+      "time_seconds": "+19.0",
+      "tokens": "+3763"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: frock_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: frock
+      POSTGRES_PASSWORD: frock_dev
+      POSTGRES_DB: frock
+    ports:
+      - "5432:5432"
+    volumes:
+      - frock_pg_data:/var/lib/postgresql/data
+
+volumes:
+  frock_pg_data:

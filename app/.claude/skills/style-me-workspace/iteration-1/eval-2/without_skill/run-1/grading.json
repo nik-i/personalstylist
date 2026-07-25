@@ -1,0 +1,10 @@
+{
+  "summary": { "pass_rate": 0.6, "passed": 3, "failed": 2, "total": 5 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": true, "evidence": "This without-skill agent independently ran the outfit-suggester engine, citing it in the response. Pulled specific items and explained the score." },
+    { "text": "Suggested outfit is casual or smart-casual — fitting a relaxed indoor birthday party", "passed": true, "evidence": "Black graphic tee + indigo straight-leg jeans + white sneakers — correctly casual for a friend's flat birthday party." },
+    { "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)", "passed": true, "evidence": "Mentions lifting the look for Friday evening, evening accessory tips." },
+    { "text": "Response does not suggest buying any new items", "passed": false, "evidence": "Suggests 'chunky loafer or a low block heel if you have one', 'gold or silver necklace', 'small shoulder bag or clutch' — some suggestions go beyond the existing wardrobe." },
+    { "text": "Tone is fun and encouraging in Maya's voice — matches the casual party vibe", "passed": false, "evidence": "More editorial than Maya's voice — uses headers (TOP PICK, ALTERNATIVE 1, WHAT TO AVOID). Friendly but not distinctly Maya." }
+  ]
+}
