@@ -1,0 +1,31 @@
+{
+  "run_id": "office-presentation-business-without_skill",
+  "expectations": [
+    {
+      "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+      "passed": false,
+      "evidence": "Agent gave a generic fashion guide with headers like 'CORE PIECE', 'SHOES', 'FINISHING DETAILS'. No engine was run, no specific wardrobe items referenced."
+    },
+    {
+      "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting",
+      "passed": true,
+      "evidence": "Blazer + shell blouse + tailored trousers — correctly identifies business formality level."
+    },
+    {
+      "text": "Response acknowledges the 'polished but not overdressed' mood — not suggesting formal gala attire",
+      "passed": true,
+      "evidence": "Addresses the mood in summary: 'sharp, polished, authoritative — without tipping into formal overdrive.' Also covers 'What to avoid'."
+    },
+    {
+      "text": "Response does not suggest buying any new items",
+      "passed": false,
+      "evidence": "Recommends buying: 'a lightweight blazer', 'fitted solid-color shell blouse', 'classic block-heel pumps', 'structured tote' — entirely unconstrained by any wardrobe."
+    },
+    {
+      "text": "Tone is warm and direct in Maya's voice, not generic styling advice",
+      "passed": false,
+      "evidence": "Response is a structured styling guide with bold headers, bullet points, and a 'WHAT TO AVOID' section — useful but editorial, not Maya's personal voice."
+    }
+  ],
+  "pass_rate": 0.4
+}

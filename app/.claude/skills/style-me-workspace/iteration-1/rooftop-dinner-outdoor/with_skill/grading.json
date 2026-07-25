@@ -1,0 +1,31 @@
+{
+  "run_id": "rooftop-dinner-outdoor-with_skill",
+  "expectations": [
+    {
+      "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+      "passed": true,
+      "evidence": "Agent explicitly ran driver.mjs --stdin with place: 'restaurant', activity: 'dinner date', month: 7, time: '7pm', mood prefixed with outdoor signal. Top outfit scored 18."
+    },
+    {
+      "text": "Suggested outfit is smart-casual or higher formality — appropriate for a rooftop dinner bar",
+      "passed": true,
+      "evidence": "Cream silk blouse + indigo straight-leg jeans + white sneakers — smart-casual, appropriate for a bar/dinner setting."
+    },
+    {
+      "text": "Response acknowledges the outdoor setting as a factor in the suggestion",
+      "passed": true,
+      "evidence": "Explicitly mentions 'outdoor terrain where heels can get tricky', 'July warmth', 'breathable for July warmth', and white sneakers chosen for outdoor practicality."
+    },
+    {
+      "text": "Response does not suggest buying any new items",
+      "passed": true,
+      "evidence": "All items are from the sample wardrobe. Note clarifies 'this suggestion is based on a sample wardrobe — connect your real wardrobe for a pick that's truly yours.'"
+    },
+    {
+      "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list",
+      "passed": true,
+      "evidence": "Opens with occasion context, explains each piece with personality ('you'll look like you put thought into it without looking like you tried too hard'), closes with alternatives."
+    }
+  ],
+  "pass_rate": 1.0
+}

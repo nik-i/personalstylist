@@ -1,0 +1,11 @@
+{
+  "summary": { "pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": true, "evidence": "Agent ran fetch-wardrobe.cjs then driver.mjs --stdin with place: 'office', activity: 'client meeting', time: 'morning', month: 7. Top result scored 13." },
+    { "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting", "passed": true, "evidence": "Black midi dress — smart-casual formality, all-season. Engine mapped office + morning to business context; dress scored highest." },
+    { "text": "Response acknowledges the 'polished but not overdressed' mood — not suggesting formal gala attire", "passed": true, "evidence": "'Black reads as authoritative without trying; the midi length keeps it professional rather than cocktail-ready.' Polished-not-stiff tone throughout." },
+    { "text": "Response does not suggest buying any new items", "passed": true, "evidence": "No buying suggestions. Flags that no footwear was found in the wardrobe — correctly surfaces the gap rather than inventing items." },
+    { "text": "Tone is warm and direct in Maya's voice, not generic styling advice", "passed": true, "evidence": "'It's the kind of piece that says I know what I'm doing without announcing itself.' Personal, confident, direct." },
+    { "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe", "passed": true, "evidence": "Black midi dress confirmed real wardrobe item. Agent explicitly notes it ran fetch-wardrobe.cjs and got 6 real items." }
+  ]
+}

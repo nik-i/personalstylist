@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FROCK — Your Personal Stylist",
+  title: "The Wardrobe Collective — Your Personal Stylist",
   description: "AI-powered personal styling for your wardrobe",
 };
 
@@ -17,7 +18,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Toaster position="bottom-center" richColors />
+      </body>
     </html>
   );
 }

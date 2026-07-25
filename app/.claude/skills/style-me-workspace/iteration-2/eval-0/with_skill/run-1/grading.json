@@ -1,0 +1,11 @@
+{
+  "summary": { "pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": true, "evidence": "Agent ran fetch-wardrobe.cjs then driver.mjs --stdin with place: 'restaurant', activity: 'dinner date', time: '7pm', month: 7, mood prefixed with outdoor signal. Score 10." },
+    { "text": "Suggested outfit is smart-casual or higher formality — appropriate for a rooftop dinner bar", "passed": true, "evidence": "Pink cape blouse + blue straight-leg jeans — smart-casual, appropriate for a 7pm rooftop dinner bar." },
+    { "text": "Response acknowledges the outdoor setting as a factor in the suggestion", "passed": true, "evidence": "Mentions light fabric for summer heat and suggests bringing a layer for the rooftop breeze." },
+    { "text": "Response does not suggest buying any new items", "passed": true, "evidence": "No buying suggestions. Accessories advice is absent; 'light layer worth tucking in your bag' implies using existing items." },
+    { "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list", "passed": true, "evidence": "'The cape blouse is the star here — it has just enough personality to feel intentional for a date without veering into overdressed territory.' Warm and specific." },
+    { "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe", "passed": true, "evidence": "Pink cape blouse and blue straight-leg jeans are both confirmed real wardrobe items fetched via fetch-wardrobe.cjs." }
+  ]
+}

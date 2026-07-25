@@ -27,7 +27,7 @@ export default function BodyShapePage() {
           What&apos;s your body shape? (A1.3)
         </h2>
         <p className="text-frock-muted text-sm">
-          This helps FROCK suggest silhouettes that flatter you.
+          This helps The Wardrobe Collective suggest silhouettes that flatter you.
         </p>
       </div>
 

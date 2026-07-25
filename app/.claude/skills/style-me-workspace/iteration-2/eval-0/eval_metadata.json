@@ -1,0 +1,12 @@
+{
+  "eval_id": 0,
+  "eval_name": "rooftop-dinner-outdoor",
+  "prompt": "I have a dinner date this Saturday at 7pm at a rooftop bar — it's mostly outdoor. What should I wear?",
+  "assertions": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "id": "uses-suggester-engine" },
+    { "text": "Suggested outfit is smart-casual or higher formality — appropriate for a rooftop dinner bar", "id": "smart-casual-formality" },
+    { "text": "Response acknowledges the outdoor setting as a factor in the suggestion", "id": "outdoor-context-acknowledged" },
+    { "text": "Response does not suggest buying any new items", "id": "no-buying-suggestions" },
+    { "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list", "id": "maya-voice" }
+  ]
+}

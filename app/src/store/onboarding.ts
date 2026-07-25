@@ -1,13 +1,19 @@
 "use client";
 
 import { create } from "zustand";
+import type { ExtractedItem } from "@/types/extraction";
 
 export type SizeEntry = { category: string; sizeValue: string; region?: string };
 export type BrandPrefEntry = { brandId: string; wearCategory: string };
+export type WardrobeItem = { id: string; tone: string; label: string };
 
 export interface OnboardingState {
   currentStep: number;
   closetCount: number;
+  wardrobeItems: WardrobeItem[];
+  importPhotosCount: number;
+  describeText: string;
+  describePick: number | null;
   country: string;
   taste: Record<number, boolean>;
   hubDone: { taste: boolean; fit: boolean; shops: boolean };
@@ -16,6 +22,8 @@ export interface OnboardingState {
   emphasis: Record<string, "show" | "down" | null>;
   budget: string | null;
   brands: Record<string, string[]>;
+
+  extractedItems: ExtractedItem[];
 
   // kept for API compatibility
   photoBlobs: File[];
@@ -34,6 +42,9 @@ export interface OnboardingState {
   goNext: () => void;
   goBack: () => void;
   setClosetCount: (n: number) => void;
+  setImportPhotosCount: (n: number) => void;
+  setDescribeText: (t: string) => void;
+  setDescribePick: (n: number | null) => void;
   setCountry: (c: string) => void;
   toggleTaste: (id: number) => void;
   setHubDone: (key: keyof OnboardingState["hubDone"], val: boolean) => void;
@@ -42,11 +53,14 @@ export interface OnboardingState {
   setEmphasis: (area: string, mode: "show" | "down" | null) => void;
   setBudget: (b: string | null) => void;
   toggleBrand: (context: string, brand: string) => void;
+  setExtractedItems: (items: ExtractedItem[]) => void;
+  addExtractedItems: (items: ExtractedItem[]) => void;
   setPhotoBlobs: (blobs: File[]) => void;
   setProfile: (profile: Partial<OnboardingState["profile"]>) => void;
   setSizes: (sizes: SizeEntry[]) => void;
   setBrandPreferences: (prefs: BrandPrefEntry[]) => void;
   setPhotoUrls: (urls: string[]) => void;
+  addWardrobeItems: (items: WardrobeItem[]) => void;
   reset: () => void;
 }
 
@@ -55,6 +69,11 @@ const TOTAL_STEPS = 7;
 const initialState = {
   currentStep: 1,
   closetCount: 0,
+  wardrobeItems: [] as WardrobeItem[],
+  extractedItems: [] as ExtractedItem[],
+  importPhotosCount: 0,
+  describeText: "",
+  describePick: null as number | null,
   country: "United Kingdom",
   taste: {} as Record<number, boolean>,
   hubDone: { taste: false, fit: false, shops: false },
@@ -78,6 +97,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   goBack: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) })),
 
   setClosetCount: (n) => set({ closetCount: n }),
+  setImportPhotosCount: (n) => set({ importPhotosCount: n }),
+  setDescribeText: (t) => set({ describeText: t }),
+  setDescribePick: (n) => set({ describePick: n }),
   setCountry: (country) => set({ country }),
   toggleTaste: (id) =>
     set((s) => ({ taste: { ...s.taste, [id]: !s.taste[id] } })),
@@ -96,10 +118,13 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       return { brands: { ...s.brands, [context]: next } };
     }),
 
+  setExtractedItems: (extractedItems) => set({ extractedItems }),
+  addExtractedItems: (items) => set((s) => ({ extractedItems: [...s.extractedItems, ...items] })),
   setPhotoBlobs: (photoBlobs) => set({ photoBlobs }),
   setProfile: (profile) => set((s) => ({ profile: { ...s.profile, ...profile } })),
   setSizes: (sizes) => set({ sizes }),
   setBrandPreferences: (brandPreferences) => set({ brandPreferences }),
   setPhotoUrls: (photoUrls) => set({ photoUrls }),
+  addWardrobeItems: (items) => set((s) => ({ wardrobeItems: [...s.wardrobeItems, ...items] })),
   reset: () => set(initialState),
 }));

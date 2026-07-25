@@ -1,0 +1,10 @@
+{
+  "summary": { "pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": true, "evidence": "Agent ran driver.mjs with place: 'office', activity: 'client meeting', time: 'morning', month: 7. Top outfit scored 19/20 — white shirt + tailored trousers + loafers." },
+    { "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting", "passed": true, "evidence": "White shirt + tailored trousers (black) + loafers (black) — textbook business formality from the wardrobe engine." },
+    { "text": "Response acknowledges the 'polished but not overdressed' mood — not suggesting formal gala attire", "passed": true, "evidence": "'The client's attention stays on what you're saying, not what you're wearing.' Offers silk blouse alternative." },
+    { "text": "Response does not suggest buying any new items", "passed": true, "evidence": "All items from sample wardrobe. 'This suggestion is based on a sample wardrobe.'" },
+    { "text": "Tone is warm and direct in Maya's voice, not generic styling advice", "passed": true, "evidence": "Conversational and reasoned — explains why each item works, ends with strategic insight about attention management." }
+  ]
+}

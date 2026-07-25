@@ -1,0 +1,11 @@
+{
+  "summary": { "pass_rate": 0.5, "passed": 3, "failed": 3, "total": 6 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": false, "evidence": "Agent fetched wardrobe manually and reasoned without running the outfit-suggester engine. No driver.mjs call." },
+    { "text": "Suggested outfit is smart-casual or higher formality — appropriate for a rooftop dinner bar", "passed": true, "evidence": "Black midi dress (smart-casual) is appropriate for a rooftop dinner date at 7pm." },
+    { "text": "Response acknowledges the outdoor setting as a factor in the suggestion", "passed": true, "evidence": "Explicitly addresses rooftop breeze: 'bring a light jacket, blazer, or wrap to layer over the dress as the night cools down.'" },
+    { "text": "Response does not suggest buying any new items", "passed": false, "evidence": "Suggests 'bring a light jacket, blazer, or wrap' and 'heeled sandals or strappy flats' without verifying these exist in the wardrobe." },
+    { "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list", "passed": false, "evidence": "Uses section headers (TOP PICK, RUNNER-UP, WHAT TO AVOID FROM YOUR WARDROBE) — editorial rather than Maya's personal voice." },
+    { "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe", "passed": true, "evidence": "Black midi dress and cream polka dot midi dress are real wardrobe items. Agent fetched wardrobe and referenced actual items." }
+  ]
+}

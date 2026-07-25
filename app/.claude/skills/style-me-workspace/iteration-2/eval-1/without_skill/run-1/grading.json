@@ -1,0 +1,11 @@
+{
+  "summary": { "pass_rate": 0.5, "passed": 3, "failed": 3, "total": 6 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": false, "evidence": "Agent fetched wardrobe via the script but did not run the outfit-suggester engine. Reasoned manually from the item list." },
+    { "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting", "passed": true, "evidence": "Black midi dress (smart-casual) — correctly identified as appropriate for a client presentation." },
+    { "text": "Response acknowledges the 'polished but not overdressed' mood — not suggesting formal gala attire", "passed": true, "evidence": "Explicitly addresses the mood: 'smart-casual is exactly the register you want: elevated enough to command the room, relaxed enough that you're not outpacing the dress code.'" },
+    { "text": "Response does not suggest buying any new items", "passed": false, "evidence": "Suggests 'structured blazer or tailored cardigan', 'pointed-toe heels or clean block-heeled mules', 'structured handbag or tote' — items not confirmed in wardrobe." },
+    { "text": "Tone is warm and direct in Maya's voice, not generic styling advice", "passed": false, "evidence": "Uses styling-guide structure with 'To style it up a notch' and bullet lists for accessories. Good advice but not Maya's first-person voice." },
+    { "text": "Outfit items come from the user's real wardrobe, not a sample or invented wardrobe", "passed": true, "evidence": "Black midi dress and cream polka dot dress are real items. Agent fetched wardrobe and referenced actual items by name." }
+  ]
+}

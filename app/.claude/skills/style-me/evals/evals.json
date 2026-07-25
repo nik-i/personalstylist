@@ -1,0 +1,23 @@
+{
+  "skill_name": "style-me",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I have a dinner date this Saturday at 7pm at a rooftop bar — it's mostly outdoor. What should I wear?",
+      "expected_output": "Conversational outfit suggestion for a smart-casual outdoor evening event in the current summer month. Should include a dress or top+bottom combo appropriate for warm weather and a dressy setting, with footwear. Should explain why each piece works. No buying suggestions.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "Got a big client presentation at the office this Thursday morning — I need to look sharp and polished but not overdressed. It's indoors obviously. Help me pick something.",
+      "expected_output": "Conversational outfit suggestion for a business/work occasion, indoors, morning. Should suggest business-formality pieces: structured top or blouse, tailored trousers or similar, appropriate footwear. Should acknowledge the 'polished but not overdressed' mood. No buying suggestions.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "My friend's birthday party is next Friday evening at their flat — so indoors, pretty casual but I want to look fun and put together. What works from my wardrobe?",
+      "expected_output": "Conversational outfit suggestion for a casual/smart-casual indoor evening party. Should pick something fun and relaxed — could be a dress or a top+bottom — not overly formal. Should be warm and Maya-like in tone. Mentions it's using sample wardrobe if real wardrobe isn't available.",
+      "files": []
+    }
+  ]
+}

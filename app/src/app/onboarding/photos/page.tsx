@@ -27,7 +27,7 @@ export default function PhotosPage() {
           Show us your best outfits
         </h2>
         <p className="text-frock-muted text-sm">
-          Upload 3–5 photos of outfits you love. This helps FROCK learn your
+          Upload 3–5 photos of outfits you love. This helps The Wardrobe Collective learn your
           aesthetic. (A1.1)
         </p>
       </div>

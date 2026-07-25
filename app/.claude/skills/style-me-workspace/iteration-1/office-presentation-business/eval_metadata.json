@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "office-presentation-business",
+  "prompt": "Got a big client presentation at the office this Thursday morning — I need to look sharp and polished but not overdressed. It's indoors obviously. Help me pick something.",
+  "assertions": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "id": "uses-suggester-engine" },
+    { "text": "Suggested outfit includes structured or tailored pieces appropriate for a business office setting", "id": "business-formality" },
+    { "text": "Response acknowledges the 'polished but not overdressed' mood — not suggesting formal gala attire", "id": "polished-not-overdressed" },
+    { "text": "Response does not suggest buying any new items", "id": "no-buying-suggestions" },
+    { "text": "Tone is warm and direct in Maya's voice, not generic styling advice", "id": "maya-voice" }
+  ]
+}

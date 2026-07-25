@@ -1,0 +1,31 @@
+{
+  "run_id": "birthday-party-casual-with_skill",
+  "expectations": [
+    {
+      "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)",
+      "passed": true,
+      "evidence": "Agent ran driver.mjs with place: 'bar', activity: 'birthday party', time: 'evening', mood: 'fun and put together', month: 7. Top outfit scored 16."
+    },
+    {
+      "text": "Suggested outfit is casual or smart-casual — fitting a relaxed indoor birthday party",
+      "passed": true,
+      "evidence": "Cream silk blouse + indigo straight-leg jeans + white sneakers — smart-casual, well-matched to a casual indoor evening party."
+    },
+    {
+      "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)",
+      "passed": true,
+      "evidence": "Silk blouse selected for evening light quality; suggests tucking for shape; velvet jumpsuit noted as evening-appropriate alternative."
+    },
+    {
+      "text": "Response does not suggest buying any new items",
+      "passed": true,
+      "evidence": "All items from sample wardrobe. Sample wardrobe caveat clearly stated at the end."
+    },
+    {
+      "text": "Tone is fun and encouraging in Maya's voice — matches the casual party vibe",
+      "passed": true,
+      "evidence": "'fun and put together without looking like you tried too hard' — tone matches the occasion. Blouse described as 'the piece that does the work', sneakers called 'clean, easy'."
+    }
+  ],
+  "pass_rate": 1.0
+}

@@ -34,6 +34,10 @@ model UserProfile {
   styleSignals   String?
   highlightPrefs String?
   downplayPrefs  String?
+  height         String?
+  hardNos        String?
+  lifestyle      String?
+  styleGoals     String?
   updatedAt      DateTime @updatedAt
 }
 
@@ -117,6 +121,7 @@ model OutfitSuggestion {
   occasionId      String?
   occasion        Occasion? @relation(fields: [occasionId], references: [id])
   vibeNote        String?
+  gapAnalysis     String?
   version         Int       @default(1)
   weatherSnapshot String?
   generatedAt     DateTime  @default(now())

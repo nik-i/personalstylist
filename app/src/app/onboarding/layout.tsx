@@ -2,25 +2,41 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
-const STEPS = ["welcome", "closet", "hub", "taste", "fit", "shops", "complete"];
-const HUB_CHILDREN = new Set(["taste", "fit", "shops"]);
+const STEPS = ["welcome", "landing", "closet", "wardrobe-preview", "complete"];
+const COUNTER_HIDDEN = new Set(["landing", "wardrobe-preview"]);
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const slug = pathname.split("/").at(-1) ?? "";
-  const isHubChild = HUB_CHILDREN.has(slug);
-  const stepIndex = STEPS.indexOf(slug);
+  // Parse nested paths: /onboarding/<primary>/<sub>/<subsub>
+  const onboardingSegments = pathname.replace(/^\/onboarding\/?/, "").split("/").filter(Boolean);
+  const primarySlug = onboardingSegments[0] ?? "";
+  const subSlug = onboardingSegments[1] ?? "";
+  const subSubSlug = onboardingSegments[2] ?? "";
 
-  // Hub children are visually "inside" hub, so show hub's progress (index 2)
-  const progressIndex = isHubChild ? 2 : stepIndex;
+  const isClosetChild = primarySlug === "closet" && subSlug !== "";
+  const isWardrobePreview = primarySlug === "wardrobe-preview";
+  const isScanScreen = subSlug === "import" && subSubSlug === "scan";
+
+  const activeSlug = isClosetChild ? "closet" : primarySlug;
+  const stepIndex = STEPS.indexOf(activeSlug);
+
+  const progressIndex = isWardrobePreview ? 2 : stepIndex;
   const progress = progressIndex >= 0 ? ((progressIndex + 1) / STEPS.length) * 100 : 0;
-  const showBack = stepIndex > 0 || isHubChild;
+  const showBack = (stepIndex > 0 || isClosetChild) && !isScanScreen;
 
   function handleBack() {
-    if (isHubChild) {
-      router.push("/onboarding/hub");
+    if (isWardrobePreview) {
+      router.push("/onboarding/landing");
+      return;
+    }
+    if (isClosetChild) {
+      if (subSubSlug) {
+        router.push(`/onboarding/closet/${subSlug}`);
+      } else {
+        router.push("/onboarding/closet");
+      }
     } else if (stepIndex > 0) {
       router.push(`/onboarding/${STEPS[stepIndex - 1]}`);
     }
@@ -43,15 +59,24 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
           <div className="w-9" />
         )}
 
-        <span
-          className="font-serif text-xl tracking-widest text-frock-ink"
-          style={{ fontFamily: "var(--font-serif)", letterSpacing: "0.12em" }}
-        >
-          FROCK
-        </span>
+        {primarySlug === "welcome" ? (
+          <span
+            className="font-sans text-xs font-semibold uppercase text-frock-ink"
+            style={{ letterSpacing: "0.18em" }}
+          >
+            THE WARDROBE COLLECTIVE
+          </span>
+        ) : (
+          <span
+            className="text-xs font-semibold uppercase text-frock-ink"
+            style={{ letterSpacing: "0.18em" }}
+          >
+            The Wardrobe Collective
+          </span>
+        )}
 
         <div className="w-9 text-right">
-          {stepIndex >= 0 && stepIndex < STEPS.length - 1 && !isHubChild && (
+          {stepIndex >= 0 && stepIndex < STEPS.length - 1 && !isClosetChild && !COUNTER_HIDDEN.has(activeSlug) && (
             <span className="text-xs text-frock-muted">{stepIndex + 1}/{STEPS.length - 1}</span>
           )}
         </div>

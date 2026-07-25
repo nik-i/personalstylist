@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "birthday-party-casual",
+  "prompt": "My friend's birthday party is next Friday evening at their flat — so indoors, pretty casual but I want to look fun and put together. What works from my wardrobe?",
+  "assertions": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "id": "uses-suggester-engine" },
+    { "text": "Suggested outfit is casual or smart-casual — fitting a relaxed indoor birthday party", "id": "casual-smart-casual-formality" },
+    { "text": "Response accounts for the evening setting (not suggesting daytime/work pieces as primary)", "id": "evening-context" },
+    { "text": "Response does not suggest buying any new items", "id": "no-buying-suggestions" },
+    { "text": "Tone is fun and encouraging in Maya's voice — matches the casual party vibe", "id": "maya-voice" }
+  ]
+}

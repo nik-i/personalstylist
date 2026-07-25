@@ -1,0 +1,10 @@
+{
+  "summary": { "pass_rate": 0.4, "passed": 2, "failed": 3, "total": 5 },
+  "expectations": [
+    { "text": "Response calls the outfit-suggester driver and uses its output (not freehand suggestions)", "passed": false, "evidence": "Agent gave entirely generic fashion advice (slip dress, block-heeled sandals, blazer) with no reference to running the outfit-suggester engine or any specific wardrobe items." },
+    { "text": "Suggested outfit is smart-casual or higher formality — appropriate for a rooftop dinner bar", "passed": true, "evidence": "Suggested wrap dress / separates with heeled sandals — appropriate formality for a dinner date setting." },
+    { "text": "Response acknowledges the outdoor setting as a factor in the suggestion", "passed": true, "evidence": "Detailed rooftop/weather analysis: temperature, wind, rooftop grating stilettos warning, layer recommendation." },
+    { "text": "Response does not suggest buying any new items", "passed": false, "evidence": "Suggests 'a slip dress or wrap dress', 'block-heeled sandals', 'a lightweight blazer' — no wardrobe-only constraint applied." },
+    { "text": "Tone is warm and conversational in Maya's voice, not a generic bullet list", "passed": false, "evidence": "Structured as a fashion editorial with section headers (THE LOOK, SHOES, LAYER) — helpful but not Maya's personal stylist voice." }
+  ]
+}
