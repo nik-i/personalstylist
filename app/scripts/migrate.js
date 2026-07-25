@@ -72,6 +72,14 @@ async function main() {
       console.log(`[migrate] applied: ${dir}`);
     }
 
+    // Seed the demo user so MCP_USER_ID can reference it without auth.
+    await client.query(`
+      INSERT INTO "User" (id, email, name, "createdAt")
+      VALUES ('demo-user', 'demo@frock.app', 'Demo User', now())
+      ON CONFLICT (email) DO NOTHING
+    `);
+    console.log('[migrate] demo user ready');
+
     console.log('[migrate] done');
   } finally {
     await client.end();

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 const STEPS = ["welcome", "landing", "closet", "wardrobe-preview", "complete"];
@@ -9,14 +8,6 @@ const COUNTER_HIDDEN = new Set(["landing", "wardrobe-preview"]);
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => {
-    fetch("/api/profile").then((r) => {
-      if (r.status === 401) {
-        window.location.href = `/api/dev/signin?redirect=${encodeURIComponent(pathname)}`;
-      }
-    }).catch(() => {});
-  }, [pathname]);
 
   // Parse nested paths: /onboarding/<primary>/<sub>/<subsub>
   const onboardingSegments = pathname.replace(/^\/onboarding\/?/, "").split("/").filter(Boolean);
