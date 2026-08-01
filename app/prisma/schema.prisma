@@ -98,7 +98,34 @@ model WardrobeItem {
   isActive       Boolean  @default(true)
   addedAt        DateTime @default(now())
 
+  // ── Richer classification fields (populated by classify.ts) ──
+  status         String   @default("pending_classification")
+  thumbnailPath  String?
+  category       String?
+  subcategory    String?
+  colorPrimary   String?
+  colorSecondary String?
+  undertone      String?
+  fabric         String?
+  fit            String   @default("[]")
+  formality      String?
+  seasonWeight   String?
+  neckline       String?
+  sleeveLength   String?
+  rise           String?
+  hemLength      String?
+
   outfitItems OutfitItem[]
+  feedback    Feedback[]
+}
+
+model Feedback {
+  id        String       @id @default(cuid())
+  garmentId String
+  garment   WardrobeItem @relation(fields: [garmentId], references: [id])
+  reaction  String
+  note      String?
+  createdAt DateTime     @default(now())
 }
 
 model Occasion {

@@ -2,20 +2,21 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { useOnboardingStore } from "@/store/onboarding";
-import type { ExtractedItem } from "@/types/extraction";
 
-type ItemStatus = "processing" | "ready" | "error";
+// Status mirrors what the server sets on WardrobeItem.status
+type ItemStatus = "uploading" | "pending_classification" | "classified" | "error";
 
 type ManualItem = {
-  id: string;
+  localId: string;       // client-only key
+  garmentId: string | null; // DB id once saved
   file: File;
-  url: string;
+  preview: string;       // object URL for display
   status: ItemStatus;
-  meta: ExtractedItem | null;
-  imageUrl: string | null; // persisted server path after upload
+  label: string | null;  // subcategory returned after classification
 };
+
+const ACCEPTED = "image/jpeg,image/png,image/webp,image/heic";
 
 export default function ManualAddPage() {
   const router = useRouter();
@@ -23,104 +24,80 @@ export default function ManualAddPage() {
   const { setClosetCount, closetCount } = useOnboardingStore();
 
   const [items, setItems] = useState<ManualItem[]>([]);
-  const [saving, setSaving] = useState(false);
 
-  const readyItems = items.filter((it) => it.status === "ready" && it.meta);
+  function updateItem(localId: string, patch: Partial<ManualItem>) {
+    setItems((prev) => prev.map((it) => it.localId === localId ? { ...it, ...patch } : it));
+  }
 
   async function processFile(entry: ManualItem) {
+    const fd = new FormData();
+    fd.append("image", entry.file);
+
     try {
-      const fd = new FormData();
-      fd.append("image", entry.file);
-      fd.append("index", "0");
+      // POST /api/garments: saves to disk, creates DB row, fires classification in background
+      const res = await fetch("/api/garments", { method: "POST", body: fd });
+      if (!res.ok) throw new Error();
+      const { id } = await res.json() as { id: string };
+      updateItem(entry.localId, { garmentId: id, status: "pending_classification" });
 
-      // Run extract and image upload in parallel
-      const [extractRes, uploadRes] = await Promise.all([
-        fetch("/api/wardrobe/extract", { method: "POST", body: fd }),
-        (async () => {
-          const ufd = new FormData();
-          ufd.append("image", entry.file);
-          return fetch("/api/wardrobe/upload-image", { method: "POST", body: ufd });
-        })(),
-      ]);
-
-      const meta = extractRes.ok
-        ? ((await extractRes.json() as { items: ExtractedItem[] }).items?.[0] ?? null)
-        : null;
-
-      const imageUrl = uploadRes.ok
-        ? ((await uploadRes.json() as { url: string }).url ?? null)
-        : null;
-
-      setItems((prev) =>
-        prev.map((it) =>
-          it.id === entry.id
-            ? { ...it, status: meta ? "ready" : "error", meta, imageUrl }
-            : it
-        )
-      );
+      // Poll until classification finishes (max ~60 s, every 3 s)
+      for (let i = 0; i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const check = await fetch(`/api/wardrobe/${id}`);
+        if (!check.ok) break;
+        const data = await check.json() as { status: string; subcategory?: string; itemType?: string };
+        if (data.status === "classified") {
+          updateItem(entry.localId, {
+            status: "classified",
+            label: data.subcategory ?? data.itemType ?? null,
+          });
+          return;
+        }
+        if (data.status === "failed") break;
+      }
+      // Timed out or failed — still saved, just no rich label yet
+      updateItem(entry.localId, { status: "pending_classification" });
     } catch {
-      setItems((prev) =>
-        prev.map((it) => (it.id === entry.id ? { ...it, status: "error" } : it))
-      );
+      updateItem(entry.localId, { status: "error" });
     }
   }
 
   function handleFiles(files: FileList | null) {
     if (!files) return;
     const newEntries: ManualItem[] = Array.from(files).map((f) => ({
-      id: `${f.name}-${f.size}-${Date.now()}-${Math.random()}`,
+      localId: `${f.name}-${f.size}-${Date.now()}-${Math.random()}`,
+      garmentId: null,
       file: f,
-      url: URL.createObjectURL(f),
-      status: "processing",
-      meta: null,
-      imageUrl: null,
+      preview: URL.createObjectURL(f),
+      status: "uploading",
+      label: null,
     }));
     setItems((prev) => [...prev, ...newEntries]);
     newEntries.forEach(processFile);
   }
 
-  function removeItem(id: string) {
+  function removeItem(localId: string) {
     setItems((prev) => {
-      const entry = prev.find((it) => it.id === id);
-      if (entry) URL.revokeObjectURL(entry.url);
-      return prev.filter((it) => it.id !== id);
+      const entry = prev.find((it) => it.localId === localId);
+      if (entry) {
+        URL.revokeObjectURL(entry.preview);
+        // Soft-delete from DB if already saved
+        if (entry.garmentId) {
+          fetch(`/api/wardrobe/${entry.garmentId}`, { method: "DELETE" }).catch(() => {});
+        }
+      }
+      return prev.filter((it) => it.localId !== localId);
     });
   }
 
-  async function handleAdd() {
-    if (readyItems.length === 0 || saving) return;
-    setSaving(true);
-    try {
-      const payload = readyItems.map(({ meta, imageUrl }) => ({
-        itemType: meta!.itemType,
-        color: meta!.color,
-        pattern: meta!.pattern,
-        fabricType: meta!.fabricType,
-        formalityLevel: meta!.formalityLevel,
-        season: meta!.season,
-        warmthLevel: meta!.warmthLevel,
-        imageUrl: imageUrl ?? null,
-      }));
-
-      const res = await fetch("/api/wardrobe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        setClosetCount(closetCount + readyItems.length);
-        toast.success(`${readyItems.length} item${readyItems.length !== 1 ? "s" : ""} added to your wardrobe`);
-        router.push("/onboarding/wardrobe-preview");
-      } else {
-        toast.error("Couldn't save. Please try again.");
-      }
-    } catch {
-      toast.error("Something went wrong.");
-    } finally {
-      setSaving(false);
-    }
+  function handleDone() {
+    const saved = items.filter((it) => it.garmentId).length;
+    setClosetCount(closetCount + saved);
+    router.push("/onboarding/closet");
   }
+
+  const busyCount = items.filter((it) => it.status === "uploading" || it.status === "pending_classification").length;
+  const savedCount = items.filter((it) => it.garmentId).length;
 
   return (
     <div className="flex flex-col gap-5 py-2 animate-[frkFade_0.35s_ease]">
@@ -133,7 +110,7 @@ export default function ManualAddPage() {
           Add your pieces
         </h1>
         <p className="text-sm text-frock-muted leading-relaxed">
-          One item per photo — I'll tag each one automatically.
+          One item per photo — each is saved and classified automatically.
         </p>
       </div>
 
@@ -141,7 +118,7 @@ export default function ManualAddPage() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept={ACCEPTED}
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
@@ -169,20 +146,23 @@ export default function ManualAddPage() {
         <>
           <div className="grid grid-cols-3 gap-2">
             {items.map((item) => (
-              <div key={item.id} className="relative aspect-square rounded-xl overflow-hidden bg-[#F8F3EB]">
-                {/* Photo thumbnail */}
+              <div key={item.localId} className="relative aspect-square rounded-xl overflow-hidden bg-[#F8F3EB]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt="" className="w-full h-full object-cover" />
+                <img src={item.preview} alt="" className="w-full h-full object-cover" />
 
-                {/* Status overlay */}
-                {item.status === "processing" && (
-                  <div className="absolute inset-0 flex items-center justify-center"
-                    style={{ background: "rgba(248,243,235,0.75)" }}>
+                {/* Uploading overlay */}
+                {(item.status === "uploading" || item.status === "pending_classification") && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1"
+                    style={{ background: "rgba(248,243,235,0.80)" }}>
                     <div className="w-6 h-6 rounded-full border-2"
                       style={{ borderColor: "#D6402B", borderTopColor: "transparent", animation: "spin 0.7s linear infinite" }} />
+                    <span className="text-[9px] text-frock-muted">
+                      {item.status === "uploading" ? "Saving…" : "Classifying…"}
+                    </span>
                   </div>
                 )}
 
+                {/* Error overlay */}
                 {item.status === "error" && (
                   <div className="absolute inset-0 flex items-center justify-center"
                     style={{ background: "rgba(255,240,240,0.85)" }}>
@@ -193,22 +173,27 @@ export default function ManualAddPage() {
                   </div>
                 )}
 
-                {/* Label strip */}
-                {item.status === "ready" && item.meta && (
+                {/* Label strip (classified) */}
+                {item.status === "classified" && item.label && (
                   <div className="absolute bottom-0 inset-x-0 px-1.5 py-1"
                     style={{ background: "rgba(32,27,21,0.62)" }}>
                     <p className="text-[10px] leading-tight truncate"
                       style={{ color: "#F8F3EB", fontFamily: "var(--font-serif)", fontStyle: "italic" }}>
-                      {item.meta.itemType}
+                      {item.label}
                     </p>
                   </div>
+                )}
+
+                {/* Saved-but-still-classifying indicator */}
+                {item.status === "pending_classification" && item.garmentId && (
+                  <div className="absolute bottom-1.5 left-1.5 w-2 h-2 rounded-full" style={{ background: "#e8c840" }} />
                 )}
 
                 {/* Remove button */}
                 <button
                   className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
                   style={{ background: "rgba(32,27,21,0.60)" }}
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => removeItem(item.localId)}
                   aria-label="Remove"
                 >
                   <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
@@ -232,36 +217,29 @@ export default function ManualAddPage() {
             </button>
           </div>
 
-          {/* Status summary */}
-          {items.some((it) => it.status === "processing") && (
+          {busyCount > 0 && (
             <p className="text-xs text-center text-frock-muted">
-              Tagging {items.filter((it) => it.status === "processing").length} photo{items.filter((it) => it.status === "processing").length !== 1 ? "s" : ""}…
+              {busyCount} photo{busyCount !== 1 ? "s" : ""} being classified…
             </p>
           )}
         </>
       )}
 
-      {/* CTA */}
-      {items.length > 0 && (
+      {/* CTA — shown once at least one item is saved */}
+      {savedCount > 0 && (
         <div className="flex flex-col gap-2 mt-1">
           <button
-            onClick={handleAdd}
-            disabled={readyItems.length === 0 || saving}
-            className="w-full rounded-full py-4 text-white font-medium text-base transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-40"
+            onClick={handleDone}
+            className="w-full rounded-full py-4 text-white font-medium text-base transition-opacity hover:opacity-90 active:opacity-80"
             style={{ background: "#D6402B" }}
           >
-            {saving
-              ? "Saving…"
-              : readyItems.length === 0
-              ? "Tagging items…"
-              : `Add ${readyItems.length} item${readyItems.length !== 1 ? "s" : ""} to wardrobe →`}
+            {busyCount > 0
+              ? `View wardrobe (${savedCount} saved, ${busyCount} classifying…)`
+              : `View my wardrobe →`}
           </button>
-          <button
-            onClick={() => router.push("/onboarding/landing")}
-            className="text-sm text-center text-frock-muted hover:text-frock-ink transition-colors underline underline-offset-2 py-1"
-          >
-            Cancel
-          </button>
+          <p className="text-xs text-center text-frock-muted">
+            Items are already in your wardrobe — you can leave any time
+          </p>
         </div>
       )}
     </div>

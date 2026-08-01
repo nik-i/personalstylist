@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "mcp:dev": "tsx --env-file=.env.local watch mcp-server/server.ts",
+    "dev:all": "concurrently -n next,mcp -c cyan,yellow \"npm run dev\" \"npm run mcp:dev\"",
+    "test:mcp": "tsx --env-file=.env.local scripts/test-mcp.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -27,6 +30,7 @@
     "@tailwindcss/forms": "^0.5.11",
     "@types/pg": "^8.20.0",
     "clsx": "^2.1.1",
+    "express": "^5.2.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.26.0",
     "mcp-handler": "^1.1.0",
@@ -39,6 +43,7 @@
     "react-dom": "19.2.4",
     "react-dropzone": "^19.1.1",
     "react-hook-form": "^7.81.0",
+    "sharp": "^0.35.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3",
@@ -46,16 +51,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/express": "^5.0.6",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "playwright": "^1.61.1",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

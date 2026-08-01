@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Stylist
 
-## Getting Started
+A Next.js wardrobe app with a voice styling agent powered by OpenAI Realtime API and a dedicated MCP tool server.
 
-First, run the development server:
+## Environment variables
+
+Copy `.env.local.example` to `.env.local` and fill in all values.
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | ✓ | PostgreSQL connection string |
+| `NEXTAUTH_URL` | ✓ | Full URL of the app (e.g. `http://localhost:3000`) |
+| `NEXTAUTH_SECRET` | ✓ | Random secret — generate with `openssl rand -base64 32` |
+| `OPENAI_API_KEY` | ✓ | OpenAI API key — used for garment classification (GPT-4o) and Realtime voice sessions |
+| `MCP_USER_ID` | ✓ | `User.id` from the DB that the MCP server queries on behalf of |
+| `MCP_SERVER_URL` | ✓ | URL of the MCP server (default: `http://localhost:3001/mcp`) |
+| `MCP_BEARER_TOKEN` | ✓ | Shared secret for MCP bearer-token auth — generate with `openssl rand -hex 32` |
+| `MCP_PORT` | optional | Port for the MCP server (default: `3001`) |
+| `EMAIL_SERVER` | optional | SMTP URL for magic-link auth |
+| `EMAIL_FROM` | optional | From address for auth emails |
+| `REMOVE_BG_API_KEY` | optional | remove.bg API key for background removal |
+
+## Development
+
+### Start everything
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev:all
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This runs Next.js (port 3000) and the MCP server (port 3001) in parallel via `concurrently`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Start individually
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Next.js only
+npm run dev
 
-## Learn More
+# MCP server only
+npm run mcp:dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Validate MCP tools (requires MCP server running)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run test:mcp
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Runs 12 tests covering: auth rejection, enum validation, non-whitelisted patch keys, and happy-path tool calls.
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### MCP server (`app/mcp-server/`)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A standalone Express + `@modelcontextprotocol/sdk` server on port 3001. It is the **only** way the voice agent accesses the database.
+
+Five tools:
+
+| Tool | Access | Description |
+|---|---|---|
+| `search_garments` | read | Filter garments by category, formality, season_weight, pattern, fabric, color, undertone, fit |
+| `get_garment` | read | Single garment by ID |
+| `get_groupings` | read | Garments grouped by color, formality, or weather |
+| `update_garment_attributes` | write | Patch fit, undertone, formality, color_primary, color_secondary, season_weight (only) |
+| `save_feedback` | write | INSERT into Feedback table: liked / disliked / too_formal / too_casual / wrong_fit / wrong_weather / other |
+
+All tool calls are logged to `app/mcp-server/logs/tool-calls.jsonl`.
+
+### Voice agent (`/voice`)
+
+WebRTC session with OpenAI Realtime API (`gpt-4o-realtime-preview`):
+
+1. Browser POSTs to `/api/realtime/session` — Next.js mints an ephemeral token using `OPENAI_API_KEY` and injects the MCP server as the agent's tool source. The real API key never reaches the browser.
+2. Browser exchanges SDP with OpenAI's Realtime endpoint.
+3. Agent audio plays in the browser; mic input is streamed to OpenAI.
+4. When the agent calls a read tool (search/get/groupings), garment thumbnails appear in the UI panel.
+
+### Styling instructions (`app/styling-instructions.md`)
+
+Editable Markdown file at the app root. The `/api/realtime/session` route reads it on every session creation and injects it as the agent's system instructions. **No code changes needed** to update agent behavior — just edit the file.
+
+## Database migrations
+
+```bash
+npx prisma migrate dev --name <description>
+npx prisma generate
+```
+
+The `Feedback` table was added in migration `20260801163122_add_feedback_table`.
