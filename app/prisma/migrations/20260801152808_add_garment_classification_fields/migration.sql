@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "WardrobeItem" ADD COLUMN     "category" TEXT,
+ADD COLUMN     "colorPrimary" TEXT,
+ADD COLUMN     "colorSecondary" TEXT,
+ADD COLUMN     "fabric" TEXT,
+ADD COLUMN     "fit" TEXT NOT NULL DEFAULT '[]',
+ADD COLUMN     "formality" TEXT,
+ADD COLUMN     "hemLength" TEXT,
+ADD COLUMN     "neckline" TEXT,
+ADD COLUMN     "rise" TEXT,
+ADD COLUMN     "seasonWeight" TEXT,
+ADD COLUMN     "sleeveLength" TEXT,
+ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'pending_classification',
+ADD COLUMN     "subcategory" TEXT,
+ADD COLUMN     "thumbnailPath" TEXT,
+ADD COLUMN     "undertone" TEXT;

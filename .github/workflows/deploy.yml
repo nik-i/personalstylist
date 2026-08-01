@@ -42,11 +42,20 @@ jobs:
           az containerapp secret set \
             --resource-group rg-students-platform \
             --name ca-${{ vars.STUDENT }} \
-            --secrets openai-api-key="${{ secrets.OPENAI_API_KEY }}"
+            --secrets \
+              openai-api-key="${{ secrets.OPENAI_API_KEY }}" \
+              database-url="${{ secrets.DATABASE_URL }}" \
+              nextauth-secret="${{ secrets.NEXTAUTH_SECRET }}"
           az containerapp update \
             --resource-group rg-students-platform \
             --name ca-${{ vars.STUDENT }} \
-            --set-env-vars MCP_USER_ID=demo-user OPENAI_API_KEY=secretref:openai-api-key
+            --set-env-vars \
+              MCP_USER_ID=demo-user \
+              OPENAI_API_KEY=secretref:openai-api-key \
+              DATABASE_URL=secretref:database-url \
+              NEXTAUTH_SECRET=secretref:nextauth-secret \
+              NEXTAUTH_URL=https://${{ vars.STUDENT }}.apps.human-angle.com \
+              AUTH_URL=https://${{ vars.STUDENT }}.apps.human-angle.com
 
       - name: Deploy to Container App
         run: |
