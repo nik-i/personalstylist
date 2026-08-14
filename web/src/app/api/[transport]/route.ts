@@ -6,9 +6,9 @@ import { getWeatherForecast } from "@/lib/weather";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getUserId(): string {
+async function getUserId(): Promise<string> {
   // Prefer the per-request user ID forwarded by style-me/route.ts
-  const fromHeader = headers().get("x-user-id");
+  const fromHeader = (await headers()).get("x-user-id");
   if (fromHeader) return fromHeader;
 
   // Fall back to env var (used by Claude Code MCP tools in .mcp.json)
@@ -89,7 +89,7 @@ Returns:
       },
       async ({ itemType, color, season, formalityLevel, limit, offset, response_format }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
 
           const where: Record<string, unknown> = { userId, isActive: true };
           if (itemType) where.itemType = { contains: itemType, mode: "insensitive" };
@@ -173,7 +173,7 @@ Returns full details of the wardrobe item.`,
       },
       async ({ id, response_format }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const item = await prisma.wardrobeItem.findFirst({
             where: { id, userId, isActive: true },
           });
@@ -246,7 +246,7 @@ Returns: The created item's ID on success.`,
       },
       async ({ itemType, color, pattern, fabricType, formalityLevel, season, warmthLevel, tags, imageUrl, source }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const item = await prisma.wardrobeItem.create({
             data: {
               userId,
@@ -317,7 +317,7 @@ Only provided fields are updated. Returns success confirmation.`,
       },
       async ({ id, tags, ...rest }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const data = {
             ...rest,
             ...(tags !== undefined && { tags: JSON.stringify(tags) }),
@@ -360,7 +360,7 @@ appear in wardrobe_list_items results. Returns success confirmation.`,
       },
       async ({ id }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const result = await prisma.wardrobeItem.updateMany({
             where: { id, userId, isActive: true },
             data: { isActive: false },
@@ -401,7 +401,7 @@ Returns:
       },
       async ({ response_format }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const profile = await prisma.userProfile.findUnique({ where: { userId } });
           if (!profile) {
             return { content: [{ type: "text", text: "No style profile found. Complete onboarding to create one." }] };
@@ -451,7 +451,7 @@ Args:
       },
       async ({ response_format }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const sizes = await prisma.size.findMany({ where: { userId } });
           if (!sizes.length) {
             return { content: [{ type: "text", text: "No sizes recorded yet." }] };
@@ -495,7 +495,7 @@ Args:
       },
       async ({ response_format }) => {
         try {
-          const userId = getUserId();
+          const userId = await getUserId();
           const prefs = await prisma.brandPreference.findMany({
             where: { userId },
             include: { brand: true },

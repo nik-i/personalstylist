@@ -3,5 +3,5 @@ import { redirect } from "next/navigation";
 
 export default async function Home() {
   const session = await auth();
-  redirect(session?.user?.id ? "/onboarding/landing" : "/onboarding/welcome");
+  redirect(session?.user?.id ? "/onboarding/landing" : "/sign-in");
 }
