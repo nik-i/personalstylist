@@ -4,14 +4,14 @@ RUN apk add --no-cache libc6-compat openssl
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY app/package.json app/package-lock.json ./
+COPY web/package.json web/package-lock.json ./
 RUN npm ci
 
 # Build
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY app/ .
+COPY web/ .
 RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
