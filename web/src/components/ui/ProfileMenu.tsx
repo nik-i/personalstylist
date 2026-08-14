@@ -2,7 +2,6 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef } from "react";
-import Image from "next/image";
 
 export function ProfileMenu() {
   const { data: session } = useSession();
@@ -36,7 +35,8 @@ export function ProfileMenu() {
         aria-label="Account menu"
       >
         {image ? (
-          <Image src={image} alt={name} width={36} height={36} className="w-full h-full object-cover" />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt={name} className="w-full h-full object-cover" />
         ) : (
           initials || (
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -59,7 +59,7 @@ export function ProfileMenu() {
           )}
           <div style={{ height: 1, background: "rgba(32,27,21,0.06)" }} />
           <button
-            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            onClick={() => signOut({ redirectTo: "/sign-in" })}
             className="w-full text-left px-4 py-2.5 text-sm text-frock-ink hover:bg-frock-cream transition-colors"
           >
             Sign out
