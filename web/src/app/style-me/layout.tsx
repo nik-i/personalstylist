@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ProfileMenu } from "@/components/ui/ProfileMenu";
 
 export default function StyleMeLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function StyleMeLayout({ children }: { children: React.ReactNode 
             Style Me Now
           </span>
 
-          <div className="w-40" />
+          <ProfileMenu />
         </div>
       </header>
 

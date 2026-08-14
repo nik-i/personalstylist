@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -327,14 +326,6 @@ export default function ProfilePage() {
       >
         My style profile
       </h1>
-
-      {/* ── Sign out ── */}
-      <button
-        onClick={() => signOut({ callbackUrl: "/sign-in" })}
-        className="self-start text-sm text-frock-muted hover:text-frock-ink transition-colors mb-6"
-      >
-        Sign out
-      </button>
 
       {/* ── Section 1: You ── */}
       <div

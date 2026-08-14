@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ProfileMenu } from "@/components/ui/ProfileMenu";
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +22,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         >
           The Wardrobe Collective
         </span>
-        <div className="w-9" />
+        <ProfileMenu />
       </header>
       <main className="flex-1 px-5 pb-8 w-full max-w-sm mx-auto">
         {children}
