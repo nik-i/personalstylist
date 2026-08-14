@@ -53,43 +53,44 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Classify in the background — don't await so the response is fast
+  // Classify synchronously — fire-and-forget is unreliable on scale-to-zero containers
   const base64 = buffer.toString("base64");
-  classifyGarment(base64, file.type)
-    .then(async (attrs) => {
-      await prisma.wardrobeItem.update({
-        where: { id: garment.id },
-        data: {
-          status: "classified",
-          category: attrs.category,
-          subcategory: attrs.subcategory,
-          itemType: attrs.subcategory,
-          colorPrimary: attrs.color_primary,
-          colorSecondary: attrs.color_secondary,
-          color: attrs.color_primary,
-          undertone: attrs.undertone,
-          pattern: attrs.pattern,
-          fabric: attrs.fabric,
-          fabricType: attrs.fabric,
-          fit: JSON.stringify(attrs.fit),
-          formality: attrs.formality,
-          formalityLevel: attrs.formality,
-          seasonWeight: attrs.season_weight,
-          neckline: attrs.neckline,
-          sleeveLength: attrs.sleeve_length,
-          rise: attrs.rise,
-          hemLength: attrs.hem_length,
-        },
-      });
-    })
-    .catch(async () => {
-      await prisma.wardrobeItem.update({
-        where: { id: garment.id },
-        data: { status: "failed" },
-      });
+  let classifyStatus: "classified" | "failed" = "classified";
+  try {
+    const attrs = await classifyGarment(base64, file.type);
+    await prisma.wardrobeItem.update({
+      where: { id: garment.id },
+      data: {
+        status: "classified",
+        category: attrs.category,
+        subcategory: attrs.subcategory,
+        itemType: attrs.subcategory,
+        colorPrimary: attrs.color_primary,
+        colorSecondary: attrs.color_secondary,
+        color: attrs.color_primary,
+        undertone: attrs.undertone,
+        pattern: attrs.pattern,
+        fabric: attrs.fabric,
+        fabricType: attrs.fabric,
+        fit: JSON.stringify(attrs.fit),
+        formality: attrs.formality,
+        formalityLevel: attrs.formality,
+        seasonWeight: attrs.season_weight,
+        neckline: attrs.neckline,
+        sleeveLength: attrs.sleeve_length,
+        rise: attrs.rise,
+        hemLength: attrs.hem_length,
+      },
     });
+  } catch {
+    classifyStatus = "failed";
+    await prisma.wardrobeItem.update({
+      where: { id: garment.id },
+      data: { status: "failed" },
+    });
+  }
 
-  return NextResponse.json({ id: garment.id, imagePath, thumbnailPath, status: "pending_classification" }, { status: 201 });
+  return NextResponse.json({ id: garment.id, imagePath, thumbnailPath, status: classifyStatus }, { status: 201 });
 }
 
 export async function GET() {

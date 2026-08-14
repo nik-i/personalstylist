@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { ProfileMenu } from "@/components/ui/ProfileMenu";
 
 const STEPS = ["welcome", "landing", "closet", "wardrobe-preview", "complete"];
 const COUNTER_HIDDEN = new Set(["landing", "wardrobe-preview"]);
@@ -75,11 +76,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
           </span>
         )}
 
-        <div className="w-9 text-right">
-          {stepIndex >= 0 && stepIndex < STEPS.length - 1 && !isClosetChild && !COUNTER_HIDDEN.has(activeSlug) && (
-            <span className="text-xs text-frock-muted">{stepIndex + 1}/{STEPS.length - 1}</span>
-          )}
-        </div>
+        <ProfileMenu />
       </header>
 
       <div className="h-px bg-frock-blush">

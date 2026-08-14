@@ -29,7 +29,7 @@ export default function SignInPage() {
           <div className="flex flex-col gap-4">
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/onboarding/landing" })}
+              onClick={() => signIn("google", { redirectTo: "/onboarding/landing" }, { prompt: "select_account" })}
               className="flex items-center justify-center gap-3 rounded-full border border-frock-blush py-4 text-frock-ink font-medium hover:bg-frock-blush/30 transition-colors"
             >
               <GoogleIcon />

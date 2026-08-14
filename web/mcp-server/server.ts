@@ -74,7 +74,7 @@ function formatGarment(item: any) {
   };
 }
 
-function buildMcpServer(): McpServer {
+function buildMcpServer(userId: string): McpServer {
   const server = new McpServer({ name: "wardrobe-stylist", version: "1.0.0" });
 
   server.tool(
@@ -342,8 +342,9 @@ const app = express();
 // express.json() consumes the stream before Hono can read it, causing parse errors.
 
 app.post("/mcp", requireBearer, async (req: Request, res: Response) => {
+  const userId = (req.headers["x-user-id"] as string) || USER_ID;
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-  const mcpServer = buildMcpServer();
+  const mcpServer = buildMcpServer(userId);
   await mcpServer.connect(transport);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await transport.handleRequest(req as any, res as any);

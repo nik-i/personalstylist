@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
+import { Providers } from "@/components/ui/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,8 +20,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster position="bottom-center" richColors />
+        <Providers>
+          {children}
+          <Toaster position="bottom-center" richColors />
+        </Providers>
       </body>
     </html>
   );

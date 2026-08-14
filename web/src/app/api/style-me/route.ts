@@ -106,12 +106,17 @@ async function loadAgentDef(): Promise<{ model: string; systemPrompt: string }> 
 
 // ── MCP client factory ────────────────────────────────────────────────────────
 
-async function connectMcp(): Promise<Client> {
+async function connectMcp(userId: string): Promise<Client> {
   const transport = new StreamableHTTPClientTransport(
     new URL(process.env.MCP_SERVER_URL ?? "http://localhost:3001/mcp"),
-    process.env.MCP_BEARER_TOKEN
-      ? { requestInit: { headers: { Authorization: `Bearer ${process.env.MCP_BEARER_TOKEN}` } } }
-      : {}
+    {
+      requestInit: {
+        headers: {
+          ...(process.env.MCP_BEARER_TOKEN ? { Authorization: `Bearer ${process.env.MCP_BEARER_TOKEN}` } : {}),
+          "X-User-Id": userId,
+        },
+      },
+    }
   );
   const client = new Client({ name: "style-me", version: "1.0.0" });
   await client.connect(transport);
@@ -158,7 +163,7 @@ export async function POST(req: NextRequest) {
   const { model, systemPrompt } = await loadAgentDef();
 
   // Connect to MCP server — all wardrobe/weather tool implementations live there
-  const mcpClient = await connectMcp();
+  const mcpClient = await connectMcp(userId);
 
   try {
     // Fetch tool schemas from MCP, convert inputSchema → input_schema for Anthropic
