@@ -1,4 +1,5 @@
 import { createMcpHandler } from "mcp-handler";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getWeatherForecast } from "@/lib/weather";
@@ -6,6 +7,11 @@ import { getWeatherForecast } from "@/lib/weather";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getUserId(): string {
+  // Prefer the per-request user ID forwarded by style-me/route.ts
+  const fromHeader = headers().get("x-user-id");
+  if (fromHeader) return fromHeader;
+
+  // Fall back to env var (used by Claude Code MCP tools in .mcp.json)
   const userId = process.env.MCP_USER_ID;
   if (!userId) {
     throw new Error(
