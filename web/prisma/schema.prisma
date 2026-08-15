@@ -25,6 +25,7 @@ model User {
   wardrobeItems     WardrobeItem[]
   occasions         Occasion[]
   outfitSuggestions OutfitSuggestion[]
+  outfitLogs        OutfitLog[]
 }
 
 model UserProfile {
@@ -81,6 +82,19 @@ model BestOutfitPhoto {
   photoUrl              String
   extractedStyleSignals String?
   uploadedAt            DateTime @default(now())
+}
+
+model OutfitLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // YYYY-MM-DD
+  pieces    String   @default("[]") // JSON: PieceSnapshot[]
+  occasion  String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
 }
 
 model WardrobeItem {

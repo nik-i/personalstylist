@@ -296,6 +296,114 @@ function buildMcpServer(userId: string): McpServer {
     }
   );
 
+  // ── Wear history helpers (inline — MCP server has its own Prisma clients) ──────
+
+  function parsePiecesLocal(raw: string): Array<{ id: string }> {
+    try { return JSON.parse(raw); } catch { return []; }
+  }
+
+  server.tool(
+    "get_wear_history",
+    "Get wear history for a single garment: how many times it has been logged in an outfit, the last date it was worn, the last 10 worn dates, and the occasions associated with those logs. Returns a clear 'never worn' shape when the garment has no history. Use this after search_garments finds similar owned items.",
+    { garment_id: z.string().describe("The wardrobe item ID to look up") },
+    async (args) => {
+      logToolCall("get_wear_history", args);
+
+      // Verify garment belongs to this user
+      const garment = await readDb.wardrobeItem.findFirst({
+        where: { id: args.garment_id, userId: uid, isActive: true },
+        select: { id: true },
+      });
+      if (!garment) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: "unknown_garment", garmentId: args.garment_id }) }],
+          isError: true,
+        };
+      }
+
+      const logs = await readDb.outfitLog.findMany({
+        where: { userId: uid },
+        orderBy: { date: "desc" },
+        select: { date: true, pieces: true, occasion: true },
+      });
+
+      const matching = logs.filter((l) => parsePiecesLocal(l.pieces).some((p) => p.id === args.garment_id));
+
+      if (matching.length === 0) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              garmentId: args.garment_id,
+              neverWorn: true,
+              wearCount: 0,
+              lastWornDate: null,
+              wornDates: [],
+              occasions: [],
+            }),
+          }],
+        };
+      }
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            garmentId: args.garment_id,
+            neverWorn: false,
+            wearCount: matching.length,
+            lastWornDate: matching[0].date,
+            wornDates: matching.slice(0, 10).map((l) => l.date),
+            occasions: matching.map((l) => l.occasion).filter(Boolean),
+          }),
+        }],
+      };
+    }
+  );
+
+  server.tool(
+    "get_wear_stats",
+    "Get per-garment wear counts for the whole wardrobe, or filtered to one category (e.g. 'tops', 'bottoms', 'outerwear'). Returns items sorted by wearCount descending. Use this to find the user's most-worn pieces for outfit pairing, or to see if a whole category is rarely worn.",
+    { category: z.string().optional().describe("Prisma category value to filter by (e.g. 'tops'). Omit for whole wardrobe.") },
+    async (args) => {
+      logToolCall("get_wear_stats", args);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const whereItem: any = { userId: uid, isActive: true };
+      if (args.category) whereItem.category = args.category;
+
+      const [garments, logs] = await Promise.all([
+        readDb.wardrobeItem.findMany({
+          where: whereItem,
+          select: { id: true, itemType: true, color: true, colorPrimary: true, category: true },
+        }),
+        readDb.outfitLog.findMany({
+          where: { userId: uid },
+          orderBy: { date: "desc" },
+          select: { date: true, pieces: true },
+        }),
+      ]);
+
+      const stats = garments
+        .map((g) => {
+          const worn = logs.filter((l) => parsePiecesLocal(l.pieces).some((p) => p.id === g.id));
+          return {
+            id: g.id,
+            itemType: g.itemType,
+            color: g.color ?? g.colorPrimary ?? null,
+            category: g.category ?? null,
+            wearCount: worn.length,
+            lastWornDate: worn[0]?.date ?? null,
+          };
+        })
+        .sort((a, b) => b.wearCount - a.wearCount);
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(stats) }],
+      };
+    }
+  );
+
   server.tool(
     "get_weather",
     "Get the weather forecast for a location on a specific day. Returns temp_min_c, temp_max_c, condition, and precipitation_probability_pct.",

@@ -12,7 +12,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
-        params: { prompt: "select_account" },
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          scope: "openid email profile https://www.googleapis.com/auth/calendar.readonly",
+        },
       },
     }),
     Email({
@@ -24,6 +28,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/sign-in",
   },
   callbacks: {
+    // When a user re-authenticates with Google (e.g. to grant calendar scope),
+    // the Prisma adapter won't update the stored tokens by default — do it here.
+    async signIn({ account }) {
+      if (account?.provider === "google" && account.access_token) {
+        await prisma.account.updateMany({
+          where: { provider: "google", providerAccountId: account.providerAccountId },
+          data: {
+            access_token: account.access_token,
+            ...(account.refresh_token ? { refresh_token: account.refresh_token } : {}),
+            ...(account.expires_at ? { expires_at: account.expires_at } : {}),
+            ...(account.scope ? { scope: account.scope } : {}),
+          },
+        });
+      }
+      return true;
+    },
     session({ session, user }) {
       session.user.id = user.id;
       return session;

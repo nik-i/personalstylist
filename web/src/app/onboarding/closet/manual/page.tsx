@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useOnboardingStore } from "@/store/onboarding";
 import { AppShell } from "@/components/layout/AppShell";
@@ -21,7 +21,6 @@ const ACCEPTED = "image/jpeg,image/png,image/webp,image/heic";
 
 export default function ManualAddPage() {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
   const { setClosetCount, closetCount } = useOnboardingStore();
 
   const [items, setItems] = useState<ManualItem[]>([]);
@@ -119,21 +118,21 @@ export default function ManualAddPage() {
         </p>
       </div>
 
-      {/* Hidden file input */}
+      {/* File input — visually hidden but not display:none so Safari label-click works */}
       <input
-        ref={fileRef}
+        id="garment-file-input"
         type="file"
         accept={ACCEPTED}
         multiple
-        className="hidden"
+        className="sr-only"
         onChange={(e) => handleFiles(e.target.files)}
       />
 
       {/* Item grid */}
       {items.length === 0 ? (
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-14 text-center transition-colors hover:border-frock-rouge hover:bg-frock-blush/20"
+        <label
+          htmlFor="garment-file-input"
+          className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-14 text-center transition-colors cursor-pointer hover:border-frock-rouge hover:bg-frock-blush/20"
           style={{ borderColor: "rgba(32,27,21,0.20)" }}
         >
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "#F8F3EB" }}>
@@ -146,7 +145,7 @@ export default function ManualAddPage() {
             <p className="text-sm font-medium text-frock-ink">Choose photos</p>
             <p className="text-xs text-frock-muted mt-1">One garment per photo</p>
           </div>
-        </button>
+        </label>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-2">
@@ -209,9 +208,9 @@ export default function ManualAddPage() {
             ))}
 
             {/* Add more tile */}
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 text-frock-muted hover:border-frock-rouge hover:text-frock-rouge transition-colors"
+            <label
+              htmlFor="garment-file-input"
+              className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 text-frock-muted hover:border-frock-rouge hover:text-frock-rouge transition-colors cursor-pointer"
               style={{ borderColor: "rgba(32,27,21,0.20)" }}
               aria-label="Add more"
             >
@@ -219,7 +218,7 @@ export default function ManualAddPage() {
                 <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
               </svg>
               <span className="text-[10px]">Add more</span>
-            </button>
+            </label>
           </div>
 
           {busyCount > 0 && (

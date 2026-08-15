@@ -9,7 +9,8 @@
     "lint": "eslint",
     "mcp:dev": "tsx --env-file=.env.local --watch mcp-server/server.ts",
     "dev:all": "concurrently -n next,mcp -c cyan,yellow \"npm run dev\" \"npm run mcp:dev\"",
-    "test:mcp": "tsx --env-file=.env.local scripts/test-mcp.ts"
+    "test:mcp": "tsx --env-file=.env.local scripts/test-mcp.ts",
+    "test:wear-history": "tsx --env-file=.env.local scripts/test-wear-history.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
