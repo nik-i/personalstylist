@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useOnboardingStore } from "@/store/onboarding";
+import { AppShell } from "@/components/layout/AppShell";
 
 // Status mirrors what the server sets on WardrobeItem.status
 type ItemStatus = "uploading" | "pending_classification" | "classified" | "error";
@@ -43,7 +44,7 @@ export default function ManualAddPage() {
       // Poll until classification finishes (max ~60 s, every 3 s)
       for (let i = 0; i < 20; i++) {
         await new Promise((r) => setTimeout(r, 3000));
-        const check = await fetch(`/api/wardrobe/${id}`);
+        const check = await fetch(`/api/garments/${id}`);
         if (!check.ok) break;
         const data = await check.json() as { status: string; subcategory?: string; itemType?: string };
         if (data.status === "classified") {
@@ -53,9 +54,12 @@ export default function ManualAddPage() {
           });
           return;
         }
-        if (data.status === "failed") break;
+        if (data.status === "failed") {
+          updateItem(entry.localId, { status: "error" });
+          return;
+        }
       }
-      // Timed out or failed — still saved, just no rich label yet
+      // Timed out — still saved, just no rich label yet
       updateItem(entry.localId, { status: "pending_classification" });
     } catch {
       updateItem(entry.localId, { status: "error" });
@@ -100,7 +104,8 @@ export default function ManualAddPage() {
   const savedCount = items.filter((it) => it.garmentId).length;
 
   return (
-    <div className="flex flex-col gap-5 py-2 animate-[frkFade_0.35s_ease]">
+    <AppShell activeView="wardrobe" topLabel="Add pieces" onNavClick={(id) => router.push(id === "wardrobe" ? "/onboarding/landing" : `/onboarding/landing?tab=${id}`)}>
+    <div className="flex flex-col gap-5 max-w-lg animate-[frkFade_0.35s_ease]">
       {/* Header */}
       <div className="flex flex-col gap-1">
         <p className="text-xs tracking-widest uppercase text-frock-muted" style={{ letterSpacing: "0.14em" }}>
@@ -243,5 +248,6 @@ export default function ManualAddPage() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }

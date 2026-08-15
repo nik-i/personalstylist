@@ -15,9 +15,10 @@ import path from "path";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type StyleMeRequest = {
-  occasion: string;
-  when: { preset?: string; date?: string; time?: string };
-  indoorOutdoor: "indoors" | "outdoors" | "mix";
+  freeText?: string;
+  occasion?: string;
+  when?: { preset?: string; date?: string; time?: string };
+  indoorOutdoor?: "indoors" | "outdoors" | "mix";
   dailyContext?: { mood?: string; note?: string };
   location?: { lat: number; lon: number; city?: string };
   feedback?: string;
@@ -51,7 +52,7 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
       },
       outfits: {
         type: "array",
-        description: "1–3 outfit combinations, best first",
+        description: "1–3 outfit combinations, best first. Every outfit must honour all explicit user constraints (requested colour, item type, occasion vibe). Return fewer outfits rather than padding with suggestions that ignore the constraint — a single perfect match is better than three where only one fits.",
         items: {
           type: "object",
           properties: {
@@ -69,7 +70,7 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
                 required: ["id", "itemType", "reason"],
               },
             },
-            score:   { type: "number", description: "Match score 1–10" },
+            score:   { type: "number", description: "Overall match score 1–10: sum of occasion_fit (0–3) + formality_match (0–3) + weather_appropriateness (0–2) + color_harmony (0–2). Higher = better. Sort outfits highest first." },
             summary: { type: "string", description: "e.g. 'Navy blazer + white shirt + black trousers'" },
           },
           required: ["pieces", "score", "summary"],
@@ -151,8 +152,8 @@ export async function POST(req: NextRequest) {
   const userId: string = rawUserId;
 
   const body = (await req.json()) as StyleMeRequest;
-  const { occasion, when, indoorOutdoor, dailyContext, location, feedback, previousSuggestion } = body;
-  if (!occasion || !indoorOutdoor) {
+  const { freeText, occasion, when, indoorOutdoor, dailyContext, location, feedback, previousSuggestion } = body;
+  if (!freeText && (!occasion || !indoorOutdoor)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -178,33 +179,38 @@ export async function POST(req: NextRequest) {
     ];
 
     // Build user message
-    const whenText =
-      when?.preset === "tonight"        ? "tonight"
-      : when?.preset === "tomorrow"     ? "tomorrow"
-      : when?.preset === "this-weekend" ? "this weekend"
-      : when?.date                      ? `on ${when.date}${when.time ? ` in the ${when.time}` : ""}`
-      : "soon";
-
-    const venueText =
-      indoorOutdoor === "indoors"    ? "indoors"
-      : indoorOutdoor === "outdoors" ? "outdoors"
-      : "both indoors and outdoors";
-
-    const dailyParts = [
-      dailyContext?.mood && `Mood: ${dailyContext.mood}`,
-      dailyContext?.note && `Notes: ${dailyContext.note}`,
-    ].filter(Boolean);
-
     const locationHint = location?.city
       ? ` Location: ${location.city} (lat ${location.lat}, lon ${location.lon}).`
       : location
       ? ` Location: lat ${location.lat}, lon ${location.lon} — call get_weather.`
       : "";
 
-    const baseMessage =
-      `Style me for ${occasion} ${whenText}. The event will be ${venueText}.` +
-      locationHint +
-      (dailyParts.length ? " " + dailyParts.join(". ") + "." : "");
+    let baseMessage: string;
+    if (freeText) {
+      baseMessage = freeText + locationHint;
+    } else {
+      const whenText =
+        when?.preset === "tonight"        ? "tonight"
+        : when?.preset === "tomorrow"     ? "tomorrow"
+        : when?.preset === "this-weekend" ? "this weekend"
+        : when?.date                      ? `on ${when.date}${when.time ? ` in the ${when.time}` : ""}`
+        : "soon";
+
+      const venueText =
+        indoorOutdoor === "indoors"    ? "indoors"
+        : indoorOutdoor === "outdoors" ? "outdoors"
+        : "both indoors and outdoors";
+
+      const dailyParts = [
+        dailyContext?.mood && `Mood: ${dailyContext.mood}`,
+        dailyContext?.note && `Notes: ${dailyContext.note}`,
+      ].filter(Boolean);
+
+      baseMessage =
+        `Style me for ${occasion} ${whenText}. The event will be ${venueText}.` +
+        locationHint +
+        (dailyParts.length ? " " + dailyParts.join(". ") + "." : "");
+    }
 
     const userMessage = feedback
       ? baseMessage +

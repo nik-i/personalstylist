@@ -69,14 +69,24 @@ export async function POST(
         sleeveLength: attrs.sleeve_length,
         rise: attrs.rise,
         hemLength: attrs.hem_length,
+        aesthetic: attrs.aesthetic,
+        occasionTags: JSON.stringify(attrs.occasion_tags),
+        isStatement: attrs.is_statement,
+        colorGroup: attrs.color_group,
+        textureFinish: attrs.texture_finish,
+        layeringRole: attrs.layering_role,
+        printScale: attrs.print_scale,
+        legOpening: attrs.leg_opening,
       },
     });
     return NextResponse.json({ status: "classified", attrs });
-  } catch {
+  } catch (err) {
+    console.error("[classify] failed for garment", id, err);
     await prisma.wardrobeItem.update({
       where: { id },
       data: { status: "failed" },
     });
-    return NextResponse.json({ error: "Classification failed" }, { status: 502 });
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "Classification failed", detail: message }, { status: 502 });
   }
 }

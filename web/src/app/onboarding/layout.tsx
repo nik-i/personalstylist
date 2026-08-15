@@ -43,6 +43,10 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     }
   }
 
+  if (primarySlug === "landing" || primarySlug === "closet") {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-frock-cream">
       <header className="flex items-center justify-between px-5 py-4">

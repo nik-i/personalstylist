@@ -18,6 +18,7 @@ import {
   ReactionEnum,
   GroupingDimensionEnum,
   PatchSchema,
+  SearchFiltersSchema,
 } from "./enums.js";
 import { logToolCall } from "./logger.js";
 
@@ -55,6 +56,7 @@ function safeParseFit(raw: string | null | undefined): string[] {
 function formatGarment(item: any) {
   return {
     id: item.id,
+    itemType: item.itemType ?? null,
     imageUrl: item.imageUrl ?? null,
     thumbnailPath: item.thumbnailPath ?? null,
     category: item.category ?? null,
@@ -71,29 +73,38 @@ function formatGarment(item: any) {
     sleeveLength: item.sleeveLength ?? null,
     rise: item.rise ?? null,
     hemLength: item.hemLength ?? null,
+    // Styling metadata
+    aesthetic: item.aesthetic ?? null,
+    occasionTags: (() => { try { return JSON.parse(item.occasionTags ?? "[]"); } catch { return []; } })(),
+    isStatement: item.isStatement ?? false,
+    colorGroup: item.colorGroup ?? null,
+    textureFinish: item.textureFinish ?? null,
+    layeringRole: item.layeringRole ?? null,
+    printScale: item.printScale ?? null,
+    legOpening: item.legOpening ?? null,
   };
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function buildMcpServer(userId: string): McpServer {
   const server = new McpServer({ name: "wardrobe-stylist", version: "1.0.0" });
+  const uid = userId || USER_ID;
 
   server.tool(
     "search_garments",
-    "Search the user's wardrobe by attributes. All filters optional. Returns id, imageUrl, all classification fields, and past feedback reactions so you can avoid repeating disliked suggestions.",
-    {
-      category: CategoryEnum.optional(),
-      formality: FormalityEnum.optional(),
-      season_weight: SeasonWeightEnum.optional(),
-      pattern: PatternEnum.optional(),
-      fabric: FabricEnum.optional(),
-      color_primary: z.string().optional(),
-      undertone: UndertoneEnum.optional(),
-      fit: FitEnum.optional(),
-    },
+    "Search the user's wardrobe by attributes. All filters optional. Returns id, imageUrl, all classification fields (including aesthetic, occasionTags, colorGroup, textureFinish, layeringRole, printScale, legOpening, isStatement), and past feedback reactions.",
+    SearchFiltersSchema.shape,
     async (args) => {
       logToolCall("search_garments", args);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const where: any = { userId: USER_ID, isActive: true };
+      const where: any = { userId: uid, isActive: true };
       if (args.category) where.category = args.category;
       if (args.formality) where.formality = args.formality;
       if (args.season_weight) where.seasonWeight = args.season_weight;
@@ -107,15 +118,21 @@ function buildMcpServer(userId: string): McpServer {
       }
       if (args.undertone) where.undertone = args.undertone;
       if (args.fit) where.fit = { contains: `"${args.fit}"` };
+      if (args.aesthetic) where.aesthetic = args.aesthetic;
+      if (args.color_group) where.colorGroup = args.color_group;
+      if (args.layering_role) where.layeringRole = args.layering_role;
+      if (args.is_statement !== undefined) where.isStatement = args.is_statement;
+      if (args.occasion_tag) where.occasionTags = { contains: `"${args.occasion_tag}"` };
 
       const items = await readDb.wardrobeItem.findMany({
         where,
         include: { feedback: { orderBy: { createdAt: "desc" }, take: 5 } },
       });
+      const shuffled = shuffleArray(items);
       return {
         content: [{
           type: "text" as const,
-          text: JSON.stringify(items.map((item) => ({
+          text: JSON.stringify(shuffled.map((item) => ({
             ...formatGarment(item),
             feedback: item.feedback.map((f) => ({ reaction: f.reaction, note: f.note ?? null, date: f.createdAt })),
           }))),
@@ -131,7 +148,7 @@ function buildMcpServer(userId: string): McpServer {
     async (args) => {
       logToolCall("get_garment", args);
       const item = await readDb.wardrobeItem.findFirst({
-        where: { id: args.id, userId: USER_ID, isActive: true },
+        where: { id: args.id, userId: uid, isActive: true },
       });
       if (!item) {
         return {
@@ -147,12 +164,12 @@ function buildMcpServer(userId: string): McpServer {
 
   server.tool(
     "get_groupings",
-    "Get garments grouped by a dimension: color, formality, or weather. Weather maps season_weight: lightweight→warm, midweight→mild, heavy→cold.",
+    "Get garments grouped by a dimension: color, formality, weather, or aesthetic. Weather maps season_weight: lightweight→warm, midweight→mild, heavy→cold.",
     { dimension: GroupingDimensionEnum },
     async (args) => {
       logToolCall("get_groupings", args);
       const items = await readDb.wardrobeItem.findMany({
-        where: { userId: USER_ID, isActive: true },
+        where: { userId: uid, isActive: true },
       });
 
       const grouped: Record<string, ReturnType<typeof formatGarment>[]> = {};
@@ -168,6 +185,8 @@ function buildMcpServer(userId: string): McpServer {
           key = item.colorPrimary ?? item.color ?? "unknown";
         } else if (args.dimension === "formality") {
           key = item.formality ?? item.formalityLevel ?? "unknown";
+        } else if (args.dimension === "aesthetic") {
+          key = item.aesthetic ?? "unknown";
         } else {
           const weight = item.seasonWeight ?? item.warmthLevel ?? "";
           key = WEIGHT_MAP[weight] ?? "unknown";
@@ -219,7 +238,7 @@ function buildMcpServer(userId: string): McpServer {
       if (patch.season_weight !== undefined) data.seasonWeight = patch.season_weight;
 
       const result = await writeDb.wardrobeItem.updateMany({
-        where: { id: args.id, userId: USER_ID, isActive: true },
+        where: { id: args.id, userId: uid, isActive: true },
         data,
       });
 
@@ -269,7 +288,7 @@ function buildMcpServer(userId: string): McpServer {
     {},
     async () => {
       logToolCall("wardrobe_get_profile", {});
-      const profile = await readDb.userProfile.findUnique({ where: { userId: USER_ID } });
+      const profile = await readDb.userProfile.findUnique({ where: { userId: uid } });
       if (!profile) {
         return { content: [{ type: "text" as const, text: "No style profile found. Proceed without profile context." }] };
       }
