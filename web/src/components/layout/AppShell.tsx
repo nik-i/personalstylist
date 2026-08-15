@@ -1,8 +1,9 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { ProfileMenu } from "@/components/ui/ProfileMenu";
 
-type NavId = "wardrobe" | "style-me" | "profile";
+type NavId = "wardrobe" | "style-me" | "should-i-buy" | "my-looks" | "profile";
 
 const NAV: Array<{ id: NavId; label: string; topLabel: string; icon: React.ReactNode }> = [
   {
@@ -25,6 +26,31 @@ const NAV: Array<{ id: NavId; label: string; topLabel: string; icon: React.React
         <path d="M11 2L2 7l9 5 9-5-9-5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
         <path d="M2 12l9 5 9-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M2 17l9 5 9-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "should-i-buy",
+    label: "Should I buy this?",
+    topLabel: "Should I buy this?",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+        <path d="M6 2h10l2 6H4L6 2z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M4 8l1 11h12l1-11" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M9 13l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "my-looks",
+    label: "My looks",
+    topLabel: "Log my look",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+        <rect x="3" y="4" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M7 4V3M15 4V3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M3 9h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M8 13l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -55,6 +81,8 @@ interface AppShellProps {
 
 export function AppShell({ children, activeView, topLabel, onNavClick }: AppShellProps) {
   const activeNav = NAV.find((n) => n.id === activeView)!;
+  const { data: session } = useSession();
+  const displayName = session?.user?.name?.split(" ")[0] ?? session?.user?.email ?? "Account";;
 
   return (
     <div className="flex min-h-screen" style={{ background: "#F8F3EB" }}>
@@ -72,6 +100,8 @@ export function AppShell({ children, activeView, topLabel, onNavClick }: AppShel
               fontSize: 14,
               letterSpacing: "0.06em",
               lineHeight: 1.4,
+              fontWeight: 700,
+              textShadow: "0 0 0.4px #F8F3EB",
             }}
           >
             The Wardrobe<br />Collective
@@ -112,7 +142,7 @@ export function AppShell({ children, activeView, topLabel, onNavClick }: AppShel
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
         >
           <ProfileMenu placement="top-right" />
-          <span className="text-xs truncate" style={{ color: "rgba(248,243,235,0.45)" }}>Account</span>
+          <span className="text-xs truncate" style={{ color: "rgba(248,243,235,0.45)" }}>{displayName}</span>
         </div>
       </aside>
 

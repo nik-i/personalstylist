@@ -19,13 +19,16 @@ type StyleMeResult = {
   empty?: boolean;
   context?: { season: string; formality: string; timeOfDay: string; weatherNote?: string };
   outfits?: Array<{ pieces: StyleMePiece[]; score: number; summary: string }>;
-  blazerNote?: string | null;
-  footwearNote?: string | null;
-  weddingColorNote?: string | null;
 };
 
 type GeoState = { lat: number; lon: number; city: string } | null;
 type WeatherState = { tempMin: number; tempMax: number; description: string } | null;
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 // ── Weather helpers ───────────────────────────────────────────────────────────
 
@@ -42,7 +45,7 @@ function wmoToDescription(code: number): string {
   return "Cloudy";
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Color helpers ─────────────────────────────────────────────────────────────
 
 const COLOR_HEX: Record<string, string> = {
   black: "#1a1a1a", white: "#f5f5f5", navy: "#1f3461", blue: "#4a7ab5",
@@ -61,7 +64,104 @@ function colorToHex(color?: string | null): string {
   return COLOR_HEX[color.toLowerCase()] ?? "#E8DDD2";
 }
 
-// ── Step heading ─────────────────────────────────────────────────────────────
+// ── Reasoning step UI ─────────────────────────────────────────────────────────
+
+function StepRow({ text, active }: { text: string; active: boolean }) {
+  return (
+    <div className="flex items-center gap-3 animate-[frkFade_0.25s_ease]">
+      {active ? (
+        <span
+          className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+          style={{ background: "#D6402B" }}
+        >
+          <span
+            className="w-2 h-2 rounded-full bg-white"
+            style={{ animation: "frkPulse 1.2s ease-in-out infinite" }}
+          />
+        </span>
+      ) : (
+        <span
+          className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+          style={{ background: "#E3EDE4" }}
+        >
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4l2.5 2.5L9 1" stroke="#4F7B58" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      )}
+      <p className={`text-sm ${active ? "text-frock-ink font-medium" : "text-frock-muted"}`}>{text}</p>
+    </div>
+  );
+}
+
+function CompactStepRow({ text, active }: { text: string; active: boolean }) {
+  return (
+    <div className="flex items-center gap-2 animate-[frkFade_0.25s_ease]">
+      {active ? (
+        <span
+          className="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center"
+          style={{ background: "#D6402B" }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-white"
+            style={{ animation: "frkPulse 1.2s ease-in-out infinite" }}
+          />
+        </span>
+      ) : (
+        <span
+          className="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center"
+          style={{ background: "#E3EDE4" }}
+        >
+          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+            <path d="M1 3l1.8 1.8 4-3.8" stroke="#4F7B58" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      )}
+      <span className={`text-xs ${active ? "text-frock-ink font-medium" : "text-frock-muted"}`}>{text}</span>
+    </div>
+  );
+}
+
+// ── SSE fetch helper ──────────────────────────────────────────────────────────
+
+async function fetchStyleMeSSE(
+  body: object,
+  onStep: (text: string) => void
+): Promise<StyleMeResult> {
+  const res = await fetch("/api/style-me", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.body) throw new Error("No response body");
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let data: StyleMeResult | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const parts = buf.split("\n\n");
+    buf = parts.pop() ?? "";
+    for (const part of parts) {
+      const line = part.trim();
+      if (!line.startsWith("data: ")) continue;
+      let ev: { type: string; text?: string; data?: StyleMeResult; message?: string };
+      try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+      if (ev.type === "step" && ev.text) onStep(ev.text);
+      else if (ev.type === "result" && ev.data) data = ev.data;
+      else if (ev.type === "error") throw new Error(ev.message ?? "Stylist error");
+    }
+  }
+
+  if (!data) throw new Error("No result received");
+  return data;
+}
+
+// ── Other helpers ─────────────────────────────────────────────────────────────
 
 function StepHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -77,96 +177,80 @@ function StepHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Piece card ────────────────────────────────────────────────────────────────
-
-function PieceCard({ piece }: { piece: StyleMePiece }) {
+function GarmentImage({ piece }: { piece: StyleMePiece }) {
+  if (piece.imageUrl) {
+    return (
+      <img
+        src={piece.imageUrl}
+        alt={piece.itemType}
+        className="rounded-2xl block mx-auto"
+        style={{ maxHeight: 300, width: "auto" }}
+      />
+    );
+  }
   return (
     <div
-      className="rounded-2xl overflow-hidden bg-white"
-      style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07), 0 4px 16px rgba(46,35,22,0.06)" }}
-    >
-      {piece.imageUrl ? (
-        <img
-          src={piece.imageUrl}
-          alt={piece.itemType}
-          className="w-full object-cover"
-          style={{ height: 200 }}
-        />
-      ) : (
-        <div style={{ height: 200, background: colorToHex(piece.color) }} />
-      )}
-      <div className="px-4 py-3">
-        <p className="text-sm font-semibold text-frock-ink">{piece.itemType}</p>
-        {piece.color && (
-          <p className="text-xs text-frock-muted mt-0.5 capitalize">{piece.color}</p>
-        )}
-        <p className="text-xs text-frock-muted mt-2 leading-relaxed line-clamp-3">
-          {piece.reason}
-        </p>
+      className="rounded-2xl"
+      style={{ height: 300, background: colorToHex(piece.color) }}
+    />
+  );
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const pct = Math.min(10, Math.max(0, score)) / 10;
+  const r = 22;
+  const size = 58;
+  const cx = size / 2;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - pct);
+  const color = pct >= 0.8 ? "#D6402B" : pct >= 0.6 ? "#C4942A" : "#8C8375";
+  const label = pct >= 0.8 ? "Strong match" : pct >= 0.6 ? "Good match" : "Partial match";
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle cx={cx} cy={cx} r={r} fill="none" stroke="rgba(32,27,21,0.08)" strokeWidth={5} />
+          <circle
+            cx={cx} cy={cx} r={r} fill="none"
+            stroke={color} strokeWidth={5} strokeLinecap="round"
+            strokeDasharray={circumference} strokeDashoffset={offset}
+            style={{ transition: "stroke-dashoffset 0.5s ease" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-sm font-semibold tabular-nums" style={{ color }}>{score}</span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-medium" style={{ color }}>{label}</span>
+        <span className="text-xs text-frock-muted">out of 10</span>
       </div>
     </div>
   );
 }
-
-// ── Note pill ─────────────────────────────────────────────────────────────────
-
-function NotePill({ text, icon }: { text: string; icon: string }) {
-  return (
-    <div
-      className="flex gap-3 rounded-2xl px-4 py-3"
-      style={{ background: "#FDF6F0", border: "1px solid rgba(214,64,43,0.15)" }}
-    >
-      <span className="text-base shrink-0">{icon}</span>
-      <p className="text-sm text-frock-ink leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-// ── Confidence bar ────────────────────────────────────────────────────────────
-
-function ConfidenceBar({ score }: { score: number }) {
-  const pct = Math.round((Math.min(10, Math.max(0, score)) / 10) * 100);
-  const label =
-    pct >= 80 ? "Strong match" : pct >= 60 ? "Good match" : "Partial match";
-  return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className="flex-1 h-1 rounded-full overflow-hidden"
-        style={{ background: "rgba(32,27,21,0.09)" }}
-      >
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{
-            width: `${pct}%`,
-            background:
-              pct >= 80 ? "#D6402B" : pct >= 60 ? "#C4942A" : "#8C8375",
-          }}
-        />
-      </div>
-      <span className="text-xs text-frock-muted shrink-0 tabular-nums">
-        {score}/10
-      </span>
-      <span
-        className="text-xs shrink-0"
-        style={{
-          color: pct >= 80 ? "#D6402B" : pct >= 60 ? "#C4942A" : "#8C8375",
-        }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// ── Hint tags ─────────────────────────────────────────────────────────────────
 
 const HINT_TAGS = [
-  "Location",
+  "Place / venue",
+  "Date & time",
   "Type of event",
   "Indoors or outdoors",
-  "Day & time of day",
   "How you want to feel",
 ];
+
+// ── Session persistence ───────────────────────────────────────────────────────
+
+const STYLE_ME_STORAGE_KEY = "style-me-result-state";
+
+type PersistedStyleMeState = {
+  contextText: string;
+  result: StyleMeResult;
+  weather: WeatherState;
+  suggestionHistory: string[];
+  outfitIndex: number;
+  saveState: SaveState;
+  saveDate: string;
+};
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -181,8 +265,43 @@ export default function StyleMePage() {
   const [isRefining, setIsRefining]   = useState(false);
   const [suggestionHistory, setSuggestionHistory] = useState<string[]>([]);
   const [outfitIndex, setOutfitIndex]             = useState(0);
+  const [saveState, setSaveState]     = useState<SaveState>("idle");
+  const [saveDate, setSaveDate]       = useState(todayStr);
+  const [reasoningSteps, setReasoningSteps] = useState<string[]>([]);
+  const [refineSteps, setRefineSteps]       = useState<string[]>([]);
 
-  // Request location silently on mount; reverse-geocode for city name
+  // Restore result state if the user navigated away and came back
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STYLE_ME_STORAGE_KEY);
+      if (!raw) return;
+      const saved: PersistedStyleMeState = JSON.parse(raw);
+      if (saved.result) {
+        setContextText(saved.contextText ?? "");
+        setResult(saved.result);
+        setWeather(saved.weather ?? null);
+        setSuggestionHistory(saved.suggestionHistory ?? []);
+        setOutfitIndex(saved.outfitIndex ?? 0);
+        setSaveState(saved.saveState === "saving" ? "idle" : (saved.saveState ?? "idle"));
+        setSaveDate(saved.saveDate ?? todayStr());
+        setStep("result");
+      }
+    } catch { /* ignore corrupted storage */ }
+  }, []);
+
+  // Persist to sessionStorage whenever the result view changes
+  useEffect(() => {
+    if (step !== "result" || !result) return;
+    try {
+      const state: PersistedStyleMeState = {
+        contextText, result, weather, suggestionHistory, outfitIndex,
+        saveState: saveState === "saving" ? "idle" : saveState,
+        saveDate,
+      };
+      sessionStorage.setItem(STYLE_ME_STORAGE_KEY, JSON.stringify(state));
+    } catch { /* ignore quota errors */ }
+  }, [step, result, contextText, weather, suggestionHistory, outfitIndex, saveState, saveDate]);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -198,49 +317,48 @@ export default function StyleMePage() {
       } catch {
         setGeo({ lat, lon, city: "" });
       }
-    }, () => { /* denied — weather just won't show */ });
+    }, () => { /* denied */ });
   }, []);
 
   const canSubmit = contextText.trim() !== "";
 
   async function submitWithDailyContext() {
     setStep("loading");
+    setReasoningSteps([]);
     setError(null);
 
+    // Fetch weather concurrently while the agent streams
+    const weatherPromise = geo
+      ? fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}` +
+          `&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&forecast_days=7`
+        )
+          .then((r) => r.json())
+          .then((w) => {
+            const daily = w?.daily;
+            const tMin = daily?.temperature_2m_min?.[0];
+            const tMax = daily?.temperature_2m_max?.[0];
+            const code = daily?.weathercode?.[0] ?? daily?.weather_code?.[0];
+            if (tMin != null && tMax != null && !isNaN(tMin) && !isNaN(tMax)) {
+              setWeather({
+                tempMin: Math.round(tMin),
+                tempMax: Math.round(tMax),
+                description: code != null ? wmoToDescription(code) : "Weather unavailable",
+              });
+            }
+          })
+          .catch(() => {})
+      : Promise.resolve();
+
     try {
-      const [data] = await Promise.all([
-        fetch("/api/style-me", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            freeText: contextText.trim(),
-            location: geo ? { lat: geo.lat, lon: geo.lon, city: geo.city } : undefined,
-          }),
-        }).then((r) => r.json() as Promise<StyleMeResult>),
-
-        geo
-          ? fetch(
-              `https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}` +
-              `&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&forecast_days=7`
-            )
-              .then((r) => r.json())
-              .then((w) => {
-                const daily = w?.daily;
-                const tMin = daily?.temperature_2m_min?.[0];
-                const tMax = daily?.temperature_2m_max?.[0];
-                const code = daily?.weathercode?.[0] ?? daily?.weather_code?.[0];
-                if (tMin != null && tMax != null && !isNaN(tMin) && !isNaN(tMax)) {
-                  setWeather({
-                    tempMin: Math.round(tMin),
-                    tempMax: Math.round(tMax),
-                    description: code != null ? wmoToDescription(code) : "Weather unavailable",
-                  });
-                }
-              })
-              .catch(() => {})
-          : Promise.resolve(),
-      ]);
-
+      const data = await fetchStyleMeSSE(
+        {
+          freeText: contextText.trim(),
+          location: geo ? { lat: geo.lat, lon: geo.lon, city: geo.city } : undefined,
+        },
+        (text) => setReasoningSteps((s) => [...s, text])
+      );
+      await weatherPromise;
       const firstSummary = data.outfits?.[0]?.summary;
       if (firstSummary) setSuggestionHistory([firstSummary]);
       setOutfitIndex(0);
@@ -253,6 +371,7 @@ export default function StyleMePage() {
   }
 
   function reset() {
+    try { sessionStorage.removeItem(STYLE_ME_STORAGE_KEY); } catch { /* ignore */ }
     setStep("occasion");
     setContextText("");
     setResult(null);
@@ -262,6 +381,30 @@ export default function StyleMePage() {
     setIsRefining(false);
     setSuggestionHistory([]);
     setOutfitIndex(0);
+    setSaveState("idle");
+    setSaveDate(todayStr());
+    setReasoningSteps([]);
+    setRefineSteps([]);
+  }
+
+  async function saveLook(pieces: StyleMePiece[]) {
+    if (saveState === "saving" || saveState === "saved") return;
+    setSaveState("saving");
+    try {
+      const res = await fetch("/api/looks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: saveDate,
+          pieceIds: pieces.map((p) => p.id),
+          occasion: contextText.trim().slice(0, 120) || null,
+          note: null,
+        }),
+      });
+      setSaveState(res.ok ? "saved" : "error");
+    } catch {
+      setSaveState("error");
+    }
   }
 
   async function submitFeedback() {
@@ -269,19 +412,18 @@ export default function StyleMePage() {
     if (!text || isRefining) return;
     setIsRefining(true);
     setFeedbackText("");
+    setRefineSteps([]);
 
     try {
-      const data = await fetch("/api/style-me", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await fetchStyleMeSSE(
+        {
           freeText: contextText.trim(),
           location: geo ? { lat: geo.lat, lon: geo.lon, city: geo.city } : undefined,
           feedback: text,
           previousSuggestion: suggestionHistory.length > 0 ? { summaries: suggestionHistory } : undefined,
-        }),
-      }).then((r) => r.json() as Promise<StyleMeResult>);
-
+        },
+        (stepText) => setRefineSteps((s) => [...s, stepText])
+      );
       const newSummary = data.outfits?.[0]?.summary;
       if (newSummary) setSuggestionHistory((h) => [...h, newSummary]);
       setOutfitIndex(0);
@@ -290,6 +432,7 @@ export default function StyleMePage() {
       setFeedbackText(text);
     } finally {
       setIsRefining(false);
+      setRefineSteps([]);
     }
   }
 
@@ -311,12 +454,25 @@ export default function StyleMePage() {
               submitWithDailyContext();
             }
           }}
-          placeholder="Describe your event — the more detail, the better the outfit."
+          placeholder="Where are you going, when, and what's the vibe? e.g. 'rooftop drinks in the city tomorrow evening, smart-casual'"
           className="w-full rounded-2xl px-5 py-4 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
           style={{ border: "1px solid rgba(32,27,21,0.12)" }}
         />
 
-        <p className="text-xs text-frock-muted mt-3 mb-2">Include details like:</p>
+        {/* Location context — shows what the system will use and nudges specificity */}
+        <div className="flex items-start gap-1.5 mt-2.5 mb-4">
+          <svg width="9" height="11" viewBox="0 0 9 11" fill="none" className="shrink-0 mt-0.5">
+            <path d="M4.5 0C2.29 0 .5 1.79.5 4c0 3 4 7 4 7s4-4 4-7c0-2.21-1.79-4-4-4zm0 5.5A1.5 1.5 0 1 1 4.5 2.5a1.5 1.5 0 0 1 0 3z" fill="#8C8375"/>
+          </svg>
+          <p className="text-xs text-frock-muted leading-relaxed">
+            {geo?.city
+              ? <>Using <span className="font-medium" style={{ color: "#554C41" }}>{geo.city}</span> and today&rsquo;s weather by default — mention a specific place or date in your description for a more accurate suggestion.</>
+              : <>Add a place and date in your description — the system will match the weather and occasion more precisely.</>
+            }
+          </p>
+        </div>
+
+        <p className="text-xs text-frock-muted mb-2">Include details like:</p>
         <div className="flex flex-wrap gap-2 mb-8">
           {HINT_TAGS.map((hint) => (
             <span
@@ -345,28 +501,25 @@ export default function StyleMePage() {
     );
   }
 
+  // ── Loading with live reasoning steps ────────────────────────────────────────
+
   if (step === "loading") {
     return (
-      <div className="flex flex-col items-center gap-6 py-24 animate-[frkFade_0.3s_ease]">
-        <MascotAvatar size="badge" />
-        <p
-          className="text-2xl text-frock-ink text-center"
-          style={{ fontFamily: "var(--font-serif)" }}
-        >
-          Checking your wardrobe…
-        </p>
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="w-2 h-2 rounded-full"
-              style={{
-                background: "#D6402B",
-                opacity: 0.4,
-                animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-              }}
-            />
-          ))}
+      <div className="flex flex-col gap-8 py-16 animate-[frkFade_0.3s_ease]">
+        <div className="flex items-center gap-3">
+          <MascotAvatar size="badge" />
+          <p className="text-2xl text-frock-ink" style={{ fontFamily: "var(--font-serif)" }}>
+            Styling you now
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 max-w-xs">
+          {reasoningSteps.length === 0 ? (
+            <StepRow text="Getting started…" active />
+          ) : (
+            reasoningSteps.map((text, i) => (
+              <StepRow key={i} text={text} active={i === reasoningSteps.length - 1} />
+            ))
+          )}
         </div>
       </div>
     );
@@ -422,172 +575,217 @@ export default function StyleMePage() {
     const seasonDisplay = result.context?.season ?? "";
     const formality = result.context?.formality ?? "";
     const totalOutfits = result.outfits?.length ?? 1;
+    const piecesWithImages = topOutfit.pieces.filter((p) => p.imageUrl);
+    const imagesToShow = piecesWithImages.length > 0 ? piecesWithImages : topOutfit.pieces.slice(0, 1);
+
+    const NavArrow = ({ dir, onClick, disabled }: { dir: "left" | "right"; onClick: () => void; disabled: boolean }) => (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className="w-11 h-11 rounded-full flex items-center justify-center transition-all disabled:opacity-25 hover:opacity-80 active:scale-95 shrink-0"
+        style={{ background: "#EDE4DA", border: "1.5px solid rgba(32,27,21,0.18)", boxShadow: "0 1px 4px rgba(32,27,21,0.10)", color: "#554C41" }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          {dir === "left"
+            ? <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            : <path d="M5 2L10 7L5 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+          }
+        </svg>
+      </button>
+    );
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 animate-[frkFade_0.3s_ease]">
+      <div className="flex flex-col gap-5 animate-[frkFade_0.3s_ease]">
 
-        {/* ── Left panel: context + feedback ─────────────────────────── */}
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <MascotAvatar size="badge" />
-              <h2
-                className="text-2xl text-frock-ink leading-snug"
-                style={{ fontFamily: "var(--font-serif)" }}
-              >
-                Here&rsquo;s your look
-              </h2>
-            </div>
-
-            {(result.context?.weatherNote || seasonDisplay) && (
-              <p className="text-xs uppercase tracking-widest text-frock-muted" style={{ letterSpacing: "0.14em" }}>
-                {result.context?.weatherNote ?? `${seasonDisplay} · ${formality.replace("_", " ")}`}
-              </p>
-            )}
-
-            {(geo?.city || weather) && (
-              <div
-                className="self-start flex items-center gap-2 rounded-full px-3 py-1.5"
-                style={{ background: "#F5EDE5", border: "1px solid rgba(32,27,21,0.08)" }}
-              >
-                {geo?.city && (
-                  <span className="text-xs text-frock-muted flex items-center gap-1">
-                    <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
-                      <path d="M5 0C2.79 0 1 1.79 1 4c0 3 4 8 4 8s4-5 4-8c0-2.21-1.79-4-4-4zm0 5.5A1.5 1.5 0 1 1 5 2.5a1.5 1.5 0 0 1 0 3z" fill="#8C8375"/>
-                    </svg>
-                    {geo.city}
-                  </span>
-                )}
-                {geo?.city && weather && <span className="text-frock-muted/40 text-xs">·</span>}
-                {weather && (
-                  <span className="text-xs text-frock-muted">
-                    {weather.tempMin}–{weather.tempMax}°C · {weather.description}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {totalOutfits === 1 && topOutfit.score != null && (
-            <ConfidenceBar score={topOutfit.score} />
-          )}
-
-          {(result.blazerNote || result.footwearNote || result.weddingColorNote) && (
-            <div className="flex flex-col gap-2">
-              {result.weddingColorNote && <NotePill icon="🤍" text={result.weddingColorNote} />}
-              {result.blazerNote && <NotePill icon="👔" text={result.blazerNote} />}
-              {result.footwearNote && <NotePill icon="👟" text={result.footwearNote} />}
-            </div>
-          )}
-
-          {totalOutfits > 1 && (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setOutfitIndex((i) => Math.max(0, i - 1))}
-                  disabled={outfitIndex === 0}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-opacity disabled:opacity-25 hover:opacity-70"
-                  style={{ background: "#F0E8DB", color: "#554C41" }}
-                >
-                  ←
-                </button>
-                <div className="flex gap-1.5">
-                  {result.outfits!.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setOutfitIndex(i)}
-                      className="rounded-full transition-all"
-                      style={{
-                        width: i === outfitIndex ? 20 : 7,
-                        height: 7,
-                        background: i === outfitIndex ? "#D6402B" : "rgba(32,27,21,0.15)",
-                      }}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={() => setOutfitIndex((i) => Math.min(totalOutfits - 1, i + 1))}
-                  disabled={outfitIndex === totalOutfits - 1}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-opacity disabled:opacity-25 hover:opacity-70"
-                  style={{ background: "#F0E8DB", color: "#554C41" }}
-                >
-                  →
-                </button>
-                <span className="text-xs text-frock-muted">
-                  Look {outfitIndex + 1} of {totalOutfits}
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          {(geo?.city || weather) && (
+            <div className="self-start flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "#F5EDE5", border: "1px solid rgba(32,27,21,0.08)" }}>
+              {geo?.city && (
+                <span className="text-xs text-frock-muted flex items-center gap-1">
+                  <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+                    <path d="M5 0C2.79 0 1 1.79 1 4c0 3 4 8 4 8s4-5 4-8c0-2.21-1.79-4-4-4zm0 5.5A1.5 1.5 0 1 1 5 2.5a1.5 1.5 0 0 1 0 3z" fill="#8C8375"/>
+                  </svg>
+                  {geo.city}
                 </span>
-              </div>
-              {topOutfit.summary && (
-                <p className="text-xs text-frock-muted leading-relaxed italic">{topOutfit.summary}</p>
               )}
-              {topOutfit.score != null && (
-                <ConfidenceBar score={topOutfit.score} />
+              {geo?.city && weather && <span className="text-frock-muted/40 text-xs">·</span>}
+              {weather && (
+                <span className="text-xs text-frock-muted">{weather.tempMin}–{weather.tempMax}°C · {weather.description}</span>
               )}
             </div>
           )}
-
-          {/* Feedback chat */}
-          <div className="flex flex-col gap-3 mt-auto pt-4">
-            {isRefining ? (
-              <div
-                className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
-                style={{ background: "#F5EDE5", border: "1px solid rgba(214,64,43,0.12)" }}
-              >
-                <div className="flex gap-1 shrink-0">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{
-                        background: "#D6402B",
-                        opacity: 0.5,
-                        animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-                      }}
-                    />
-                  ))}
-                </div>
-                <p className="text-sm text-frock-muted">Finding something new…</p>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      submitFeedback();
-                    }
-                  }}
-                  placeholder="Not quite right? Tell me what to change…"
-                  className="flex-1 rounded-2xl px-4 py-3 text-sm text-frock-ink bg-white outline-none"
-                  style={{ border: "1px solid rgba(32,27,21,0.12)" }}
-                />
-                <button
-                  onClick={submitFeedback}
-                  disabled={!feedbackText.trim()}
-                  className="rounded-full px-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
-                  style={{ background: "#D6402B", minWidth: 44 }}
-                >
-                  ↑
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={reset}
-              className="self-start text-sm text-frock-muted hover:text-frock-ink transition-colors"
-            >
-              ← Start over
-            </button>
+          <div className="flex items-center gap-3">
+            <MascotAvatar size="badge" />
+            <h2 className="text-2xl text-frock-ink leading-snug" style={{ fontFamily: "var(--font-serif)" }}>
+              Here&rsquo;s your look
+            </h2>
           </div>
+          {(result.context?.weatherNote || seasonDisplay) && (
+            <p className="text-xs uppercase tracking-widest text-frock-muted" style={{ letterSpacing: "0.14em" }}>
+              {result.context?.weatherNote ?? `${seasonDisplay} · ${formality.replace("_", " ")}`}
+            </p>
+          )}
         </div>
 
-        {/* ── Right panel: outfit cards ───────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-4 content-start">
-          {topOutfit.pieces.map((piece) => (
-            <PieceCard key={piece.id} piece={piece} />
-          ))}
+        {/* Two-column body */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          {/* Left: images + nav */}
+          <div className="flex flex-col gap-4">
+            <div className={`grid gap-3 ${imagesToShow.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+              {imagesToShow.map((piece) => (
+                <GarmentImage key={piece.id} piece={piece} />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <NavArrow
+                dir="left"
+                onClick={() => { setOutfitIndex((i) => Math.max(0, i - 1)); setSaveState("idle"); }}
+                disabled={totalOutfits <= 1 || outfitIndex === 0}
+              />
+              <div className="flex-1 flex items-center justify-center gap-2">
+                {totalOutfits > 1 && (
+                  <>
+                    <div className="flex gap-1.5">
+                      {result.outfits!.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setOutfitIndex(i)}
+                          className="rounded-full transition-all"
+                          style={{ width: i === outfitIndex ? 20 : 7, height: 7, background: i === outfitIndex ? "#D6402B" : "rgba(32,27,21,0.15)" }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-frock-muted">Look {outfitIndex + 1} of {totalOutfits}</span>
+                  </>
+                )}
+              </div>
+              <NavArrow
+                dir="right"
+                onClick={() => { setOutfitIndex((i) => Math.min(totalOutfits - 1, i + 1)); setSaveState("idle"); }}
+                disabled={totalOutfits <= 1 || outfitIndex === totalOutfits - 1}
+              />
+              {topOutfit.score != null && (
+                <div className="ml-1 pl-3" style={{ borderLeft: "1px solid rgba(32,27,21,0.10)" }}>
+                  <ScoreRing score={topOutfit.score} />
+                </div>
+              )}
+            </div>
+
+            {topOutfit.summary && (
+              <p className="text-xs text-frock-muted leading-relaxed italic">{topOutfit.summary}</p>
+            )}
+          </div>
+
+          {/* Right: piece cards + actions */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
+              {topOutfit.pieces.map((piece) => (
+                <div key={piece.id} className="rounded-2xl px-4 py-3 bg-white" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+                  <p className="text-sm font-semibold text-frock-ink">{piece.itemType}</p>
+                  {piece.color && <p className="text-xs text-frock-muted mt-0.5 capitalize">{piece.color}</p>}
+                  <p className="text-xs text-frock-muted mt-2 leading-relaxed">{piece.reason}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3 mt-auto pt-2">
+
+              {/* Feedback / refine */}
+              {isRefining ? (
+                <div
+                  className="rounded-2xl px-4 py-4"
+                  style={{ background: "#F5EDE5", border: "1px solid rgba(214,64,43,0.12)" }}
+                >
+                  <p className="text-xs text-frock-muted mb-3 font-medium uppercase tracking-wider" style={{ letterSpacing: "0.1em" }}>
+                    Refining your look
+                  </p>
+                  <div className="flex flex-col gap-2.5">
+                    {refineSteps.length === 0 ? (
+                      <CompactStepRow text="Getting started…" active />
+                    ) : (
+                      refineSteps.map((text, i) => (
+                        <CompactStepRow key={i} text={text} active={i === refineSteps.length - 1} />
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitFeedback(); } }}
+                    placeholder="Not quite right? Tell me what to change…"
+                    className="flex-1 rounded-2xl px-4 py-3 text-sm text-frock-ink bg-white outline-none"
+                    style={{ border: "1px solid rgba(32,27,21,0.12)" }}
+                  />
+                  <button
+                    onClick={submitFeedback}
+                    disabled={!feedbackText.trim()}
+                    className="rounded-full px-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
+                    style={{ background: "#D6402B", minWidth: 44 }}
+                  >
+                    ↑
+                  </button>
+                </div>
+              )}
+
+              {/* Save look */}
+              {saveState === "saved" ? (
+                <div
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
+                  style={{ background: "#F0FBF4", border: "1px solid rgba(52,168,83,0.25)" }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
+                    <circle cx="9" cy="9" r="8" fill="#34A853" />
+                    <path d="M5.5 9l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: "#1a5c2e" }}>Saved to your looks!</p>
+                    <p className="text-xs" style={{ color: "#4a8a5e" }}>
+                      Logged for {new Date(saveDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                  <a
+                    href="/onboarding/landing?tab=my-looks"
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full"
+                    style={{ background: "#34A853", color: "#fff" }}
+                  >
+                    View calendar →
+                  </a>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-2 rounded-2xl px-4 py-3"
+                  style={{ background: "#F8F3EB", border: "1px solid rgba(32,27,21,0.10)" }}
+                >
+                  <span className="text-xs text-frock-muted shrink-0">Wear on</span>
+                  <input
+                    type="date"
+                    value={saveDate}
+                    onChange={(e) => { setSaveDate(e.target.value); setSaveState("idle"); }}
+                    className="text-xs rounded-lg px-2 py-1 outline-none"
+                    style={{ border: "1px solid rgba(32,27,21,0.14)", background: "#fff", color: "#201B15" }}
+                  />
+                  <button
+                    onClick={() => saveLook(topOutfit.pieces)}
+                    disabled={saveState === "saving"}
+                    className="ml-auto shrink-0 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity disabled:opacity-50 hover:opacity-90"
+                    style={{ background: "#201B15" }}
+                  >
+                    {saveState === "saving" ? "Saving…" : saveState === "error" ? "Try again" : "I'll wear this"}
+                  </button>
+                </div>
+              )}
+
+              <button onClick={reset} className="self-start text-sm text-frock-muted hover:text-frock-ink transition-colors">
+                ← Start over
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

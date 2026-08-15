@@ -1,8 +1,6 @@
-// Style-me API route.
-// System prompt and model come from .claude/agents/personal-stylist.md (the single source of truth).
-// All wardrobe/weather tool implementations live in the MCP server.
-// This route only handles: auth, building the user message, the Anthropic SDK loop,
-// proxying tool calls to MCP, and intercepting suggest_outfit for structured output.
+// Style-me API route — SSE streaming.
+// System prompt and model come from .claude/agents/personal-stylist.md.
+// Streams { type: "step", text } events while the agent works, then { type: "result", data }.
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -29,10 +27,24 @@ type StyleMeRequest = {
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ── suggest_outfit output schema ───────────────────────────────────────────────
-// This tool is NOT in the MCP server — the route adds it to the tools list so
-// Claude can signal "done" with structured JSON. The route intercepts the call
-// and returns the input as the API response.
+// ── status_update tool ────────────────────────────────────────────────────────
+
+const STATUS_UPDATE_TOOL: Anthropic.Tool = {
+  name: "status_update",
+  description: "Emit a short status message to the user while you work. Call this once before suggest_outfit to share what you noticed.",
+  input_schema: {
+    type: "object",
+    properties: {
+      message: {
+        type: "string",
+        description: "One short sentence, under 12 words. E.g. 'You have 3 dresses — finding the best for a warm evening'",
+      },
+    },
+    required: ["message"],
+  },
+};
+
+// ── suggest_outfit tool ────────────────────────────────────────────────────────
 
 const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
   name: "suggest_outfit",
@@ -52,7 +64,7 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
       },
       outfits: {
         type: "array",
-        description: "1–3 outfit combinations, best first. Every outfit must honour all explicit user constraints (requested colour, item type, occasion vibe). Return fewer outfits rather than padding with suggestions that ignore the constraint — a single perfect match is better than three where only one fits.",
+        description: "1–3 outfit combinations, best first. Every outfit must honour all explicit user constraints. Return fewer outfits rather than padding — a single perfect match is better than three where only one fits.",
         items: {
           type: "object",
           properties: {
@@ -70,7 +82,7 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
                 required: ["id", "itemType", "reason"],
               },
             },
-            score:   { type: "number", description: "Overall match score 1–10: sum of occasion_fit (0–3) + formality_match (0–3) + weather_appropriateness (0–2) + color_harmony (0–2). Higher = better. Sort outfits highest first." },
+            score:   { type: "number", description: "Overall match score 1–10. Sort outfits highest first." },
             summary: { type: "string", description: "e.g. 'Navy blazer + white shirt + black trousers'" },
           },
           required: ["pieces", "score", "summary"],
@@ -84,28 +96,18 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
   },
 };
 
-// ── Load agent definition ─────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function loadAgentDef(): Promise<{ model: string; systemPrompt: string }> {
-  // .claude/agents/ lives one level above the web/ directory
   const agentPath = path.resolve(process.cwd(), "..", ".claude", "agents", "personal-stylist.md");
   const content = await readFile(agentPath, "utf-8");
-
-  // YAML frontmatter is delimited by --- on its own line
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) throw new Error("personal-stylist.md: missing or malformed frontmatter");
-
   const frontmatter = match[1];
   const systemPrompt = match[2].trim();
   const modelLine = frontmatter.match(/^model:\s*(.+)$/m);
-
-  return {
-    model: modelLine?.[1].trim() ?? "claude-sonnet-4-6",
-    systemPrompt,
-  };
+  return { model: modelLine?.[1].trim() ?? "claude-sonnet-4-6", systemPrompt };
 }
-
-// ── MCP client factory ────────────────────────────────────────────────────────
 
 async function connectMcp(userId: string): Promise<Client> {
   const transport = new StreamableHTTPClientTransport(
@@ -124,8 +126,6 @@ async function connectMcp(userId: string): Promise<Client> {
   return client;
 }
 
-// ── Backfill imageUrls from DB if the agent omitted them ──────────────────────
-
 async function backfillImages(
   userId: string,
   outfits: Array<{ pieces: Array<{ id: string; imageUrl?: string | null }> }>
@@ -143,6 +143,23 @@ async function backfillImages(
   }
 }
 
+function toolStepText(name: string, input: Record<string, unknown>): string {
+  switch (name) {
+    case "wardrobe_get_profile": return "Reading your style profile";
+    case "search_garments": {
+      const q = String(input.query ?? input.category ?? "").trim();
+      return q ? `Searching wardrobe for "${q}"` : "Scanning your wardrobe";
+    }
+    case "get_garment":               return "Inspecting a garment";
+    case "get_groupings":             return "Reviewing your saved groupings";
+    case "get_weather":               return "Checking the weather";
+    case "update_garment_attributes": return "Updating garment details";
+    case "save_feedback":             return "Saving your feedback";
+    case "suggest_outfit":            return "Assembling your outfit";
+    default:                          return name.replace(/_/g, " ");
+  }
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -157,165 +174,232 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const encoder = new TextEncoder();
+  const sseHeaders = {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    "X-Accel-Buffering": "no",
+  };
+
+  // Empty wardrobe — return immediately via SSE
   const count = await prisma.wardrobeItem.count({ where: { userId, isActive: true } });
-  if (count === 0) return NextResponse.json({ empty: true });
+  if (count === 0) {
+    return new Response(
+      new ReadableStream({
+        start(ctrl) {
+          ctrl.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "result", data: { empty: true } })}\n\n`));
+          ctrl.close();
+        },
+      }),
+      { headers: sseHeaders }
+    );
+  }
 
-  // Load agent definition — system prompt and model live only in personal-stylist.md
-  const { model, systemPrompt } = await loadAgentDef();
+  let model: string, systemPrompt: string;
+  try {
+    ({ model, systemPrompt } = await loadAgentDef());
+  } catch {
+    return NextResponse.json({ error: "Stylist agent unavailable" }, { status: 500 });
+  }
 
-  // Connect to MCP server — all wardrobe/weather tool implementations live there
   const mcpClient = await connectMcp(userId);
 
-  try {
-    // Fetch tool schemas from MCP, convert inputSchema → input_schema for Anthropic
-    const { tools: mcpTools } = await mcpClient.listTools();
-    const tools: Anthropic.Tool[] = [
-      ...mcpTools.map((t) => ({
-        name: t.name,
-        description: t.description ?? "",
-        input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
-      })),
-      SUGGEST_OUTFIT_TOOL,
-    ];
+  const stream = new ReadableStream({
+    async start(controller) {
+      function emit(event: object) {
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        } catch { /* client disconnected */ }
+      }
 
-    // Build user message
-    const locationHint = location?.city
-      ? ` Location: ${location.city} (lat ${location.lat}, lon ${location.lon}).`
-      : location
-      ? ` Location: lat ${location.lat}, lon ${location.lon} — call get_weather.`
-      : "";
+      try {
+        const { tools: mcpTools } = await mcpClient.listTools();
+        const tools: Anthropic.Tool[] = [
+          ...mcpTools.map((t) => ({
+            name: t.name,
+            description: t.description ?? "",
+            input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
+          })),
+          STATUS_UPDATE_TOOL,
+          SUGGEST_OUTFIT_TOOL,
+        ];
 
-    let baseMessage: string;
-    if (freeText) {
-      baseMessage = freeText + locationHint;
-    } else {
-      const whenText =
-        when?.preset === "tonight"        ? "tonight"
-        : when?.preset === "tomorrow"     ? "tomorrow"
-        : when?.preset === "this-weekend" ? "this weekend"
-        : when?.date                      ? `on ${when.date}${when.time ? ` in the ${when.time}` : ""}`
-        : "soon";
+        // Build user message
+        const locationHint = location?.city
+          ? ` Location: ${location.city} (lat ${location.lat}, lon ${location.lon}).`
+          : location
+          ? ` Location: lat ${location.lat}, lon ${location.lon} — call get_weather.`
+          : "";
 
-      const venueText =
-        indoorOutdoor === "indoors"    ? "indoors"
-        : indoorOutdoor === "outdoors" ? "outdoors"
-        : "both indoors and outdoors";
-
-      const dailyParts = [
-        dailyContext?.mood && `Mood: ${dailyContext.mood}`,
-        dailyContext?.note && `Notes: ${dailyContext.note}`,
-      ].filter(Boolean);
-
-      baseMessage =
-        `Style me for ${occasion} ${whenText}. The event will be ${venueText}.` +
-        locationHint +
-        (dailyParts.length ? " " + dailyParts.join(". ") + "." : "");
-    }
-
-    const userMessage = feedback
-      ? baseMessage +
-        (previousSuggestion?.summaries?.length
-          ? `\n\nPreviously suggested: ${previousSuggestion.summaries.join("; ")}.`
-          : "") +
-        `\n\nUser feedback: "${feedback}". Please suggest a different outfit that addresses this. Avoid repeating the exact same combination from the previous suggestion unless no alternative exists. Recommend outfit combinations from my wardrobe only.`
-      : baseMessage + " Recommend outfit combinations from my wardrobe only.";
-
-    // ── Agentic loop ────────────────────────────────────────────────────────────
-
-    const messages: Anthropic.MessageParam[] = [{ role: "user", content: userMessage }];
-    let recommendation: Record<string, unknown> | null = null;
-    const MAX_TURNS = 10;
-
-    for (let turn = 0; turn < MAX_TURNS; turn++) {
-      const response = await anthropic.messages.create({
-        model,
-        max_tokens: 4096,
-        system: systemPrompt,
-        tools,
-        messages,
-      });
-
-      messages.push({ role: "assistant", content: response.content });
-      if (response.stop_reason !== "tool_use") break;
-
-      const toolUseBlocks = response.content.filter(
-        (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
-      );
-      if (!toolUseBlocks.length) break;
-
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-      for (const toolUse of toolUseBlocks) {
-        let resultText = "";
-
-        if (toolUse.name === "suggest_outfit") {
-          // Intercept: capture the structured output, don't proxy to MCP
-          recommendation = toolUse.input as Record<string, unknown>;
-          resultText = "Captured.";
+        let baseMessage: string;
+        if (freeText) {
+          baseMessage = freeText + locationHint;
         } else {
-          // Proxy all other tool calls through the MCP server
-          const mcpResult = await mcpClient.callTool({
-            name: toolUse.name,
-            arguments: toolUse.input as Record<string, unknown>,
-          });
-          const mcpContent = mcpResult.content as Array<{ type: string; text?: string }>;
-          resultText = mcpContent
-            .filter((c) => c.type === "text" && c.text != null)
+          const whenText =
+            when?.preset === "tonight"        ? "tonight"
+            : when?.preset === "tomorrow"     ? "tomorrow"
+            : when?.preset === "this-weekend" ? "this weekend"
+            : when?.date                      ? `on ${when.date}${when.time ? ` in the ${when.time}` : ""}`
+            : "soon";
+          const venueText =
+            indoorOutdoor === "indoors"    ? "indoors"
+            : indoorOutdoor === "outdoors" ? "outdoors"
+            : "both indoors and outdoors";
+          const dailyParts = [
+            dailyContext?.mood && `Mood: ${dailyContext.mood}`,
+            dailyContext?.note && `Notes: ${dailyContext.note}`,
+          ].filter(Boolean);
+          baseMessage =
+            `Style me for ${occasion} ${whenText}. The event will be ${venueText}.` +
+            locationHint +
+            (dailyParts.length ? " " + dailyParts.join(". ") + "." : "");
+        }
+
+        const userMessage = feedback
+          ? baseMessage +
+            (previousSuggestion?.summaries?.length
+              ? `\n\nPreviously suggested: ${previousSuggestion.summaries.join("; ")}.`
+              : "") +
+            `\n\nUser feedback: "${feedback}". Please suggest a different outfit that addresses this. Avoid repeating the exact same combination from the previous suggestion unless no alternative exists. Recommend outfit combinations from my wardrobe only.`
+          : baseMessage + " Recommend outfit combinations from my wardrobe only.";
+
+        // Pre-fetch wardrobe profile + all garments + weather in parallel before the
+        // first LLM call. Injecting as synthetic tool history lets the model call
+        // suggest_outfit immediately instead of spending a roundtrip fetching them.
+        const prefetchLabel = location
+          ? "Reading your wardrobe and checking the weather"
+          : "Reading your wardrobe";
+        emit({ type: "step", text: prefetchLabel });
+
+        function extractMcpText(r: Awaited<ReturnType<typeof mcpClient.callTool>>): string {
+          return (r.content as Array<{ type: string; text?: string }>)
+            .filter((c) => c.type === "text" && c.text)
             .map((c) => c.text!)
             .join("\n");
-          if (mcpResult.isError) resultText = `Error: ${resultText}`;
         }
 
-        toolResults.push({
-          type: "tool_result",
-          tool_use_id: toolUse.id,
-          content: resultText,
-        });
-      }
+        const [profileText, wardrobeText, weatherText] = await Promise.all([
+          mcpClient.callTool({ name: "wardrobe_get_profile", arguments: {} }).then(extractMcpText),
+          mcpClient.callTool({ name: "search_garments",      arguments: {} }).then(extractMcpText),
+          location
+            ? mcpClient.callTool({ name: "get_weather", arguments: { lat: location.lat, lon: location.lon, day_offset: 0 } }).then(extractMcpText)
+            : Promise.resolve(""),
+        ]);
 
-      messages.push({ role: "user", content: toolResults });
-      if (recommendation) break;
-    }
+        const prefetched = [
+          { id: "pre_0", name: "wardrobe_get_profile", input: {},                                                              text: profileText },
+          { id: "pre_1", name: "search_garments",      input: {},                                                              text: wardrobeText },
+          ...(location ? [{ id: "pre_2", name: "get_weather", input: { lat: location.lat, lon: location.lon, day_offset: 0 }, text: weatherText }] : []),
+        ];
 
-    // Safety net: if loop ended without suggest_outfit, force one final call
-    if (!recommendation) {
-      messages.push({
-        role: "user",
-        content: "You have all the information you need. Call suggest_outfit now with your best recommendation.",
-      });
-      const forced = await anthropic.messages.create({
-        model,
-        max_tokens: 4096,
-        system: systemPrompt,
-        tools: [SUGGEST_OUTFIT_TOOL],
-        tool_choice: { type: "tool", name: "suggest_outfit" },
-        messages,
-      });
-      const toolUseBlocks = forced.content.filter(
-        (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
-      );
-      for (const toolUse of toolUseBlocks) {
-        if (toolUse.name === "suggest_outfit") {
-          recommendation = toolUse.input as Record<string, unknown>;
-          break;
+        // Remove pre-fetched tools so the model doesn't call them again
+        const prefetchedNames = new Set(prefetched.map((p) => p.name));
+        const agentTools = tools.filter((t) => !prefetchedNames.has(t.name));
+
+        const messages: Anthropic.MessageParam[] = [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: prefetched.map((p) => ({ type: "tool_use" as const, id: p.id, name: p.name, input: p.input })) },
+          { role: "user",      content: prefetched.map((p) => ({ type: "tool_result" as const, tool_use_id: p.id, content: p.text })) },
+        ];
+
+        let recommendation: Record<string, unknown> | null = null;
+        const MAX_TURNS = 10;
+
+        for (let turn = 0; turn < MAX_TURNS; turn++) {
+          const statusTurn = turn < 2 && !recommendation;
+          const response = await anthropic.messages.create({
+            model,
+            max_tokens: statusTurn ? 256 : 4096,
+            system: systemPrompt,
+            tools: agentTools,
+            tool_choice: statusTurn
+              ? ({ type: "tool", name: "status_update" } as Anthropic.ToolChoiceTool)
+              : ({ type: "auto" } as Anthropic.ToolChoiceAuto),
+            messages,
+          });
+
+          messages.push({ role: "assistant", content: response.content });
+          if (response.stop_reason !== "tool_use") break;
+
+          const toolUseBlocks = response.content.filter(
+            (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
+          );
+          if (!toolUseBlocks.length) break;
+
+          // Run all tool calls for this turn in parallel
+          const toolResults = await Promise.all(
+            toolUseBlocks.map(async (toolUse) => {
+              let resultText = "";
+              if (toolUse.name === "status_update") {
+                const msg = (toolUse.input as { message?: string }).message ?? "";
+                if (msg) emit({ type: "step", text: msg });
+                resultText = "ok";
+              } else if (toolUse.name === "suggest_outfit") {
+                emit({ type: "step", text: toolStepText(toolUse.name, toolUse.input as Record<string, unknown>) });
+                recommendation = toolUse.input as Record<string, unknown>;
+                resultText = "Captured.";
+              } else {
+                const mcpResult = await mcpClient.callTool({
+                  name: toolUse.name,
+                  arguments: toolUse.input as Record<string, unknown>,
+                });
+                const mcpContent = mcpResult.content as Array<{ type: string; text?: string }>;
+                resultText = mcpContent
+                  .filter((c) => c.type === "text" && c.text != null)
+                  .map((c) => c.text!)
+                  .join("\n");
+                if (mcpResult.isError) resultText = `Error: ${resultText}`;
+              }
+              return { type: "tool_result" as const, tool_use_id: toolUse.id, content: resultText };
+            })
+          );
+
+          messages.push({ role: "user", content: toolResults });
+          if (recommendation) break;
         }
+
+        // Safety net
+        if (!recommendation) {
+          emit({ type: "step", text: "Finalising your look" });
+          messages.push({
+            role: "user",
+            content: "You have all the information you need. Call suggest_outfit now with your best recommendation.",
+          });
+          const forced = await anthropic.messages.create({
+            model,
+            max_tokens: 4096,
+            system: systemPrompt,
+            tools: [SUGGEST_OUTFIT_TOOL],
+            tool_choice: { type: "tool", name: "suggest_outfit" },
+            messages,
+          });
+          for (const block of forced.content) {
+            if (block.type === "tool_use" && block.name === "suggest_outfit") {
+              recommendation = block.input as Record<string, unknown>;
+              break;
+            }
+          }
+        }
+
+        if (!recommendation) {
+          emit({ type: "error", message: "Stylist could not generate a recommendation. Please try again." });
+          return;
+        }
+
+        const outfits = recommendation.outfits as Array<{
+          pieces: Array<{ id: string; imageUrl?: string | null }>;
+        }> | undefined;
+        if (outfits?.length) await backfillImages(userId, outfits);
+
+        emit({ type: "result", data: recommendation });
+      } catch (err) {
+        emit({ type: "error", message: err instanceof Error ? err.message : "Something went wrong. Please try again." });
+      } finally {
+        await mcpClient.close();
+        try { controller.close(); } catch { /* already closed */ }
       }
-    }
+    },
+  });
 
-    if (!recommendation) {
-      return NextResponse.json(
-        { error: "Stylist could not generate a recommendation. Please try again." },
-        { status: 500 }
-      );
-    }
-
-    const outfits = recommendation.outfits as Array<{
-      pieces: Array<{ id: string; imageUrl?: string | null }>;
-    }> | undefined;
-    if (outfits?.length) await backfillImages(userId, outfits);
-
-    return NextResponse.json(recommendation);
-  } finally {
-    await mcpClient.close();
-  }
+  return new Response(stream, { headers: sseHeaders });
 }

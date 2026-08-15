@@ -5,9 +5,11 @@ import { Suspense } from "react";
 import { AppShell, NavId } from "@/components/layout/AppShell";
 import { ClosetContent } from "@/components/wardrobe/ClosetContent";
 import StyleMePage from "@/app/style-me/page";
+import ShouldIBuyPage from "@/app/should-i-buy/page";
+import MyLooksPage from "@/app/my-looks/page";
 import ProfilePage from "@/app/profile/page";
 
-const VALID_TABS: NavId[] = ["wardrobe", "style-me", "profile"];
+const VALID_TABS: NavId[] = ["wardrobe", "style-me", "should-i-buy", "my-looks", "profile"];
 
 function LandingContent() {
   const router = useRouter();
@@ -28,6 +30,8 @@ function LandingContent() {
     <AppShell activeView={view} onNavClick={handleNavClick}>
       {view === "wardrobe" && <ClosetContent />}
       {view === "style-me" && <StyleMePage />}
+      {view === "should-i-buy" && <ShouldIBuyPage />}
+      {view === "my-looks" && <MyLooksPage />}
       {view === "profile" && <ProfilePage />}
     </AppShell>
   );
