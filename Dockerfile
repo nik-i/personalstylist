@@ -33,6 +33,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
 
+# Agent definition read at runtime by the style-me route
+COPY .claude/agents/personal-stylist.md ./.claude/agents/personal-stylist.md
+
 # Prisma query engine (needed by the Next.js app at runtime)
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 

@@ -99,7 +99,7 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function loadAgentDef(): Promise<{ model: string; systemPrompt: string }> {
-  const agentPath = path.resolve(process.cwd(), "..", ".claude", "agents", "personal-stylist.md");
+  const agentPath = path.resolve(process.cwd(), ".claude", "agents", "personal-stylist.md");
   const content = await readFile(agentPath, "utf-8");
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) throw new Error("personal-stylist.md: missing or malformed frontmatter");
