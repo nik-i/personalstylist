@@ -79,23 +79,9 @@ function effectiveWeather(i: DbItem): string {
 
 export const ADD_METHODS = [
   {
-    id: "import",
-    route: "/onboarding/closet/import",
-    label: "Import photos",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="7" cy="9" r="1.5" fill="currentColor" />
-        <path d="M2 14l4-3.5 3.5 3 3-3.5 5.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    bg: "#F5DCD3",
-    color: "#D6402B",
-  },
-  {
     id: "manual",
     route: "/onboarding/closet/manual",
-    label: "Add manually",
+    label: "Upload wardrobe Items",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <rect x="2" y="3" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
@@ -124,7 +110,7 @@ function TogglePill({ label, active, onClick }: { label: string; active: boolean
   return (
     <button
       onClick={onClick}
-      className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-all shrink-0"
+      className="rounded-none px-2.5 py-1 text-[11px] font-medium transition-all shrink-0"
       style={
         active
           ? { background: "#1f3461", color: "#FFFFFF" }
@@ -140,7 +126,7 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
   return (
     <button
       onClick={onClick}
-      className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-all shrink-0"
+      className="rounded-none px-2.5 py-1 text-[11px] font-medium transition-all shrink-0"
       style={
         active
           ? { background: "#D6402B", color: "#FFFFFF" }
@@ -178,17 +164,17 @@ function ItemTile({ item, deleting, selected, onDelete, onTap }: { item: DbItem;
         {fmt(item.subcategory ?? item.itemType)}
       </p>
       {item.status === "pending_classification" && (
-        <span className="absolute top-2 left-2 w-2 h-2 rounded-full" style={{ background: "#e8c840" }} />
+        <span className="absolute top-2 left-2 w-2 h-2 rounded-none" style={{ background: "#e8c840" }} />
       )}
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
         disabled={deleting}
-        className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center hover:opacity-80"
+        className="absolute top-2 right-2 w-6 h-6 rounded-none flex items-center justify-center hover:opacity-80"
         style={{ background: "rgba(32,27,21,0.60)" }}
         aria-label="Remove"
       >
         {deleting
-          ? <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: "white", borderTopColor: "transparent", animation: "spin 0.6s linear infinite" }} />
+          ? <div className="w-3 h-3 rounded-none border-2" style={{ borderColor: "white", borderTopColor: "transparent", animation: "spin 0.6s linear infinite" }} />
           : <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 1l7 7M8 1L1 8" stroke="white" strokeWidth="1.6" strokeLinecap="round" /></svg>
         }
       </button>
@@ -290,7 +276,7 @@ export function ClosetContent({ compact }: { compact?: boolean }) {
               key={m.id}
               onClick={() => router.push(m.route)}
               title={m.label}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all hover:opacity-80 active:scale-[0.97]"
+              className="flex items-center gap-1.5 rounded-none px-3 py-2 text-xs font-medium transition-all hover:opacity-80 active:scale-[0.97]"
               style={{ background: m.bg, color: m.color }}
             >
               {m.icon}
@@ -318,7 +304,7 @@ export function ClosetContent({ compact }: { compact?: boolean }) {
               return (
                 <button
                   onClick={() => setShowFilters((s) => !s)}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all shrink-0"
+                  className="flex items-center gap-1.5 rounded-none px-3 py-1 text-[11px] font-medium transition-all shrink-0"
                   style={active > 0
                     ? { background: "#D6402B", color: "#fff" }
                     : { background: "white", color: "#554C41", border: "1px solid rgba(32,27,21,0.15)" }}
@@ -334,7 +320,7 @@ export function ClosetContent({ compact }: { compact?: boolean }) {
 
           {/* Collapsible filter panel */}
           {showFilters && (
-            <div className="rounded-xl px-3 py-2.5 flex flex-col gap-2.5"
+            <div className="rounded-none px-3 py-2.5 flex flex-col gap-2.5"
               style={{ background: "white", border: "1px solid rgba(32,27,21,0.08)", boxShadow: "0 2px 8px rgba(32,27,21,0.06)" }}>
               {categories.length > 2 && (
                 <div>
@@ -383,7 +369,7 @@ export function ClosetContent({ compact }: { compact?: boolean }) {
       )}
 
       {isEmpty && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl py-16 text-center"
+        <div className="flex flex-col items-center justify-center gap-2 rounded-none py-16 text-center"
           style={{ background: "#F0E8DB", border: "1.5px dashed rgba(32,27,21,0.15)", minHeight: 260 }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ color: "#C8B89A" }}>
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"

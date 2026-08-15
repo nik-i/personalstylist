@@ -71,17 +71,17 @@ function StepRow({ text, active }: { text: string; active: boolean }) {
     <div className="flex items-center gap-3 animate-[frkFade_0.25s_ease]">
       {active ? (
         <span
-          className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-5 h-5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#D6402B" }}
         >
           <span
-            className="w-2 h-2 rounded-full bg-white"
+            className="w-2 h-2 rounded-none bg-white"
             style={{ animation: "frkPulse 1.2s ease-in-out infinite" }}
           />
         </span>
       ) : (
         <span
-          className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-5 h-5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#E3EDE4" }}
         >
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -99,17 +99,17 @@ function CompactStepRow({ text, active }: { text: string; active: boolean }) {
     <div className="flex items-center gap-2 animate-[frkFade_0.25s_ease]">
       {active ? (
         <span
-          className="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-3.5 h-3.5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#D6402B" }}
         >
           <span
-            className="w-1.5 h-1.5 rounded-full bg-white"
+            className="w-1.5 h-1.5 rounded-none bg-white"
             style={{ animation: "frkPulse 1.2s ease-in-out infinite" }}
           />
         </span>
       ) : (
         <span
-          className="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-3.5 h-3.5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#E3EDE4" }}
         >
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
@@ -183,14 +183,14 @@ function GarmentImage({ piece }: { piece: StyleMePiece }) {
       <img
         src={piece.imageUrl}
         alt={piece.itemType}
-        className="rounded-2xl block mx-auto"
+        className="rounded-xl block mx-auto"
         style={{ maxHeight: 300, width: "auto" }}
       />
     );
   }
   return (
     <div
-      className="rounded-2xl"
+      className="rounded-none"
       style={{ height: 300, background: colorToHex(piece.color) }}
     />
   );
@@ -455,7 +455,7 @@ export default function StyleMePage() {
             }
           }}
           placeholder="Where are you going, when, and what's the vibe? e.g. 'rooftop drinks in the city tomorrow evening, smart-casual'"
-          className="w-full rounded-2xl px-5 py-4 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
+          className="w-full rounded-none px-5 py-4 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
           style={{ border: "1px solid rgba(32,27,21,0.12)" }}
         />
 
@@ -477,7 +477,7 @@ export default function StyleMePage() {
           {HINT_TAGS.map((hint) => (
             <span
               key={hint}
-              className="rounded-full px-3 py-1.5 text-xs text-frock-muted"
+              className="rounded-none px-3 py-1.5 text-xs text-frock-muted"
               style={{ background: "#F5EDE5", border: "1px solid rgba(32,27,21,0.07)" }}
             >
               {hint}
@@ -492,7 +492,7 @@ export default function StyleMePage() {
         <button
           onClick={submitWithDailyContext}
           disabled={!canSubmit}
-          className="rounded-full px-10 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-40 hover:opacity-90"
+          className="rounded-none px-10 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-40 hover:opacity-90"
           style={{ background: "#D6402B" }}
         >
           Style me
@@ -540,7 +540,7 @@ export default function StyleMePage() {
           </p>
           <button
             onClick={reset}
-            className="mt-4 rounded-full px-8 py-3 text-sm font-medium text-frock-ink"
+            className="mt-4 rounded-none px-8 py-3 text-sm font-medium text-frock-ink"
             style={{ border: "1px solid rgba(32,27,21,0.15)" }}
           >
             Go back
@@ -563,7 +563,7 @@ export default function StyleMePage() {
           </p>
           <button
             onClick={reset}
-            className="mt-4 rounded-full px-8 py-3 text-sm font-medium text-frock-ink"
+            className="mt-4 rounded-none px-8 py-3 text-sm font-medium text-frock-ink"
             style={{ border: "1px solid rgba(32,27,21,0.15)" }}
           >
             Try again
@@ -582,7 +582,7 @@ export default function StyleMePage() {
       <button
         onClick={onClick}
         disabled={disabled}
-        className="w-11 h-11 rounded-full flex items-center justify-center transition-all disabled:opacity-25 hover:opacity-80 active:scale-95 shrink-0"
+        className="w-11 h-11 rounded-none flex items-center justify-center transition-all disabled:opacity-25 hover:opacity-80 active:scale-95 shrink-0"
         style={{ background: "#EDE4DA", border: "1.5px solid rgba(32,27,21,0.18)", boxShadow: "0 1px 4px rgba(32,27,21,0.10)", color: "#554C41" }}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -600,7 +600,7 @@ export default function StyleMePage() {
         {/* Header */}
         <div className="flex flex-col gap-2">
           {(geo?.city || weather) && (
-            <div className="self-start flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "#F5EDE5", border: "1px solid rgba(32,27,21,0.08)" }}>
+            <div className="self-start flex items-center gap-2 rounded-none px-3 py-1.5" style={{ background: "#F5EDE5", border: "1px solid rgba(32,27,21,0.08)" }}>
               {geo?.city && (
                 <span className="text-xs text-frock-muted flex items-center gap-1">
                   <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
@@ -653,7 +653,7 @@ export default function StyleMePage() {
                         <button
                           key={i}
                           onClick={() => setOutfitIndex(i)}
-                          className="rounded-full transition-all"
+                          className="rounded-none transition-all"
                           style={{ width: i === outfitIndex ? 20 : 7, height: 7, background: i === outfitIndex ? "#D6402B" : "rgba(32,27,21,0.15)" }}
                         />
                       ))}
@@ -683,7 +683,7 @@ export default function StyleMePage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
               {topOutfit.pieces.map((piece) => (
-                <div key={piece.id} className="rounded-2xl px-4 py-3 bg-white" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+                <div key={piece.id} className="rounded-none px-4 py-3 bg-white" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
                   <p className="text-sm font-semibold text-frock-ink">{piece.itemType}</p>
                   {piece.color && <p className="text-xs text-frock-muted mt-0.5 capitalize">{piece.color}</p>}
                   <p className="text-xs text-frock-muted mt-2 leading-relaxed">{piece.reason}</p>
@@ -696,7 +696,7 @@ export default function StyleMePage() {
               {/* Feedback / refine */}
               {isRefining ? (
                 <div
-                  className="rounded-2xl px-4 py-4"
+                  className="rounded-none px-4 py-4"
                   style={{ background: "#F5EDE5", border: "1px solid rgba(214,64,43,0.12)" }}
                 >
                   <p className="text-xs text-frock-muted mb-3 font-medium uppercase tracking-wider" style={{ letterSpacing: "0.1em" }}>
@@ -719,13 +719,13 @@ export default function StyleMePage() {
                     onChange={(e) => setFeedbackText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitFeedback(); } }}
                     placeholder="Not quite right? Tell me what to change…"
-                    className="flex-1 rounded-2xl px-4 py-3 text-sm text-frock-ink bg-white outline-none"
+                    className="flex-1 rounded-none px-4 py-3 text-sm text-frock-ink bg-white outline-none"
                     style={{ border: "1px solid rgba(32,27,21,0.12)" }}
                   />
                   <button
                     onClick={submitFeedback}
                     disabled={!feedbackText.trim()}
-                    className="rounded-full px-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
+                    className="rounded-none px-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
                     style={{ background: "#D6402B", minWidth: 44 }}
                   >
                     ↑
@@ -736,7 +736,7 @@ export default function StyleMePage() {
               {/* Save look */}
               {saveState === "saved" ? (
                 <div
-                  className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
+                  className="flex items-center gap-3 rounded-none px-4 py-3.5"
                   style={{ background: "#F0FBF4", border: "1px solid rgba(52,168,83,0.25)" }}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
@@ -751,7 +751,7 @@ export default function StyleMePage() {
                   </div>
                   <a
                     href="/onboarding/landing?tab=my-looks"
-                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full"
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-none"
                     style={{ background: "#34A853", color: "#fff" }}
                   >
                     View calendar →
@@ -759,7 +759,7 @@ export default function StyleMePage() {
                 </div>
               ) : (
                 <div
-                  className="flex items-center gap-2 rounded-2xl px-4 py-3"
+                  className="flex items-center gap-2 rounded-none px-4 py-3"
                   style={{ background: "#F8F3EB", border: "1px solid rgba(32,27,21,0.10)" }}
                 >
                   <span className="text-xs text-frock-muted shrink-0">Wear on</span>
@@ -767,13 +767,13 @@ export default function StyleMePage() {
                     type="date"
                     value={saveDate}
                     onChange={(e) => { setSaveDate(e.target.value); setSaveState("idle"); }}
-                    className="text-xs rounded-lg px-2 py-1 outline-none"
+                    className="text-xs rounded-none px-2 py-1 outline-none"
                     style={{ border: "1px solid rgba(32,27,21,0.14)", background: "#fff", color: "#201B15" }}
                   />
                   <button
                     onClick={() => saveLook(topOutfit.pieces)}
                     disabled={saveState === "saving"}
-                    className="ml-auto shrink-0 rounded-full px-4 py-2 text-xs font-semibold text-white transition-opacity disabled:opacity-50 hover:opacity-90"
+                    className="ml-auto shrink-0 rounded-none px-4 py-2 text-xs font-semibold text-white transition-opacity disabled:opacity-50 hover:opacity-90"
                     style={{ background: "#201B15" }}
                   >
                     {saveState === "saving" ? "Saving…" : saveState === "error" ? "Try again" : "I'll wear this"}
