@@ -99,17 +99,17 @@ function StepRow({ text, active }: { text: string; active: boolean }) {
     <div className="flex items-center gap-3 animate-[frkFade_0.25s_ease]">
       {active ? (
         <span
-          className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-5 h-5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#D6402B" }}
         >
           <span
-            className="w-2 h-2 rounded-full bg-white"
+            className="w-2 h-2 rounded-none bg-white"
             style={{ animation: "frkPulse 1.2s ease-in-out infinite" }}
           />
         </span>
       ) : (
         <span
-          className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-5 h-5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#E3EDE4" }}
         >
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -127,17 +127,17 @@ function CompactStepRow({ text, active }: { text: string; active: boolean }) {
     <div className="flex items-center gap-2 animate-[frkFade_0.25s_ease]">
       {active ? (
         <span
-          className="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-3.5 h-3.5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#D6402B" }}
         >
           <span
-            className="w-1.5 h-1.5 rounded-full bg-white"
+            className="w-1.5 h-1.5 rounded-none bg-white"
             style={{ animation: "frkPulse 1.2s ease-in-out infinite" }}
           />
         </span>
       ) : (
         <span
-          className="w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center"
+          className="w-3.5 h-3.5 rounded-none shrink-0 flex items-center justify-center"
           style={{ background: "#E3EDE4" }}
         >
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
@@ -215,7 +215,7 @@ function GarmentThumb({ imageUrl, color, size = 56 }: { imageUrl?: string | null
   }
   return (
     <div
-      className="rounded-xl shrink-0"
+      className="rounded-none shrink-0"
       style={{ width: size, height: size, background: colorToHex(color) }}
     />
   );
@@ -226,9 +226,9 @@ function VersatilityBar({ score }: { score: number }) {
   const color = pct >= 0.7 ? "#4F7B58" : pct >= 0.4 ? "#C4942A" : "#D6402B";
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 rounded-full overflow-hidden" style={{ height: 6, background: "rgba(32,27,21,0.10)" }}>
+      <div className="flex-1 rounded-none overflow-hidden" style={{ height: 6, background: "rgba(32,27,21,0.10)" }}>
         <div
-          className="h-full rounded-full transition-all"
+          className="h-full rounded-none transition-all"
           style={{ width: `${pct * 100}%`, background: color }}
         />
       </div>
@@ -359,7 +359,7 @@ export default function ShouldIBuyPage() {
             value={productUrl}
             onChange={(e) => setProductUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full rounded-2xl px-5 py-3.5 text-sm text-frock-ink bg-white outline-none"
+            className="w-full rounded-none px-5 py-3.5 text-sm text-frock-ink bg-white outline-none"
             style={{ border: "1px solid rgba(32,27,21,0.12)" }}
           />
         </div>
@@ -374,7 +374,7 @@ export default function ShouldIBuyPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the item — color, style, fabric, where you'd wear it…"
-            className="w-full rounded-2xl px-5 py-3.5 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
+            className="w-full rounded-none px-5 py-3.5 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
             style={{ border: "1px solid rgba(32,27,21,0.12)" }}
           />
         </div>
@@ -389,7 +389,7 @@ export default function ShouldIBuyPage() {
             value={priceNote}
             onChange={(e) => setPriceNote(e.target.value)}
             placeholder="e.g. £85 or $120 on sale"
-            className="w-full rounded-2xl px-5 py-3.5 text-sm text-frock-ink bg-white outline-none"
+            className="w-full rounded-none px-5 py-3.5 text-sm text-frock-ink bg-white outline-none"
             style={{ border: "1px solid rgba(32,27,21,0.12)" }}
           />
         </div>
@@ -404,12 +404,12 @@ export default function ShouldIBuyPage() {
               <img
                 src={imagePreview}
                 alt="Product preview"
-                className="rounded-2xl object-cover"
+                className="rounded-none object-cover"
                 style={{ maxHeight: 160, maxWidth: "100%" }}
               />
               <button
                 onClick={clearImage}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+                className="absolute top-2 right-2 w-7 h-7 rounded-none flex items-center justify-center text-xs font-semibold"
                 style={{ background: "rgba(32,27,21,0.7)", color: "#F8F3EB" }}
               >
                 ✕
@@ -418,7 +418,7 @@ export default function ShouldIBuyPage() {
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-3 rounded-2xl px-5 py-3.5 text-sm text-frock-muted transition-colors hover:text-frock-ink"
+              className="flex items-center gap-3 rounded-none px-5 py-3.5 text-sm text-frock-muted transition-colors hover:text-frock-ink"
               style={{ border: "1.5px dashed rgba(32,27,21,0.18)", width: "100%" }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -447,7 +447,7 @@ export default function ShouldIBuyPage() {
         <button
           onClick={() => submit()}
           disabled={!canSubmit}
-          className="rounded-full px-10 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-40 hover:opacity-90"
+          className="rounded-none px-10 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-40 hover:opacity-90"
           style={{ background: "#D6402B" }}
         >
           Evaluate this item
@@ -490,11 +490,11 @@ export default function ShouldIBuyPage() {
 
         {/* Verdict banner */}
         <div
-          className="rounded-3xl px-7 py-6 flex items-start gap-5"
+          className="rounded-none px-7 py-6 flex items-start gap-5"
           style={{ background: vc.bg, border: `1.5px solid ${vc.border}` }}
         >
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shrink-0 mt-0.5"
+            className="w-12 h-12 rounded-none flex items-center justify-center text-xl font-bold shrink-0 mt-0.5"
             style={{ background: vc.text, color: "#fff" }}
           >
             {vc.icon}
@@ -505,7 +505,7 @@ export default function ShouldIBuyPage() {
                 {vc.label}
               </span>
               <span
-                className="rounded-full px-3 py-0.5 text-xs font-semibold"
+                className="rounded-none px-3 py-0.5 text-xs font-semibold"
                 style={{ background: vc.text, color: "#fff", opacity: 0.85 }}
               >
                 {result.confidence}/10 confidence
@@ -517,7 +517,7 @@ export default function ShouldIBuyPage() {
 
         {result.wearInsight && (
           <div
-            className="rounded-2xl px-5 py-4 flex gap-3"
+            className="rounded-none px-5 py-4 flex gap-3"
             style={{ background: "#F0F4F8", border: "1px solid rgba(32,27,21,0.08)" }}
           >
             <span className="text-base shrink-0">📊</span>
@@ -531,7 +531,7 @@ export default function ShouldIBuyPage() {
           <div className="flex flex-col gap-4">
 
             {result.similarOwnedItems.length > 0 && (
-              <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+              <div className="rounded-none bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
                 <p className="text-xs font-semibold text-frock-muted uppercase tracking-widest mb-3" style={{ letterSpacing: "0.12em" }}>
                   You already own
                 </p>
@@ -552,7 +552,7 @@ export default function ShouldIBuyPage() {
 
             {result.colorFitNote && (
               <div
-                className="rounded-2xl px-5 py-4 flex gap-3"
+                className="rounded-none px-5 py-4 flex gap-3"
                 style={{ background: "#FDF6F0", border: "1px solid rgba(214,64,43,0.12)" }}
               >
                 <span className="text-base shrink-0">🎨</span>
@@ -560,7 +560,7 @@ export default function ShouldIBuyPage() {
               </div>
             )}
 
-            <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+            <div className="rounded-none bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
               <p className="text-xs font-semibold text-frock-muted uppercase tracking-widest mb-3" style={{ letterSpacing: "0.12em" }}>
                 Versatility
               </p>
@@ -573,7 +573,7 @@ export default function ShouldIBuyPage() {
             </div>
 
             {result.redFlags.length > 0 && (
-              <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+              <div className="rounded-none bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
                 <p className="text-xs font-semibold text-frock-muted uppercase tracking-widest mb-3" style={{ letterSpacing: "0.12em" }}>
                   Red flags
                 </p>
@@ -592,7 +592,7 @@ export default function ShouldIBuyPage() {
           {/* Right column */}
           <div className="flex flex-col gap-4">
             {result.outfitsItEnables.length > 0 ? (
-              <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+              <div className="rounded-none bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
                 <p className="text-xs font-semibold text-frock-muted uppercase tracking-widest mb-3" style={{ letterSpacing: "0.12em" }}>
                   Outfits this enables
                 </p>
@@ -610,7 +610,7 @@ export default function ShouldIBuyPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
+              <div className="rounded-none bg-white p-5" style={{ boxShadow: "0 1px 4px rgba(46,35,22,0.07)" }}>
                 <p className="text-xs font-semibold text-frock-muted uppercase tracking-widest mb-2" style={{ letterSpacing: "0.12em" }}>
                   Outfits this enables
                 </p>
@@ -626,7 +626,7 @@ export default function ShouldIBuyPage() {
         <div className="flex flex-col gap-3">
           {isFollowingUp ? (
             <div
-              className="rounded-2xl px-4 py-4"
+              className="rounded-none px-4 py-4"
               style={{ background: "#F5EDE5", border: "1px solid rgba(214,64,43,0.12)" }}
             >
               <p className="text-xs text-frock-muted mb-3 font-medium uppercase tracking-wider" style={{ letterSpacing: "0.1em" }}>
@@ -649,13 +649,13 @@ export default function ShouldIBuyPage() {
                 onChange={(e) => setFollowUp(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitFollowUp(); } }}
                 placeholder="Ask a follow-up — e.g. 'what if it were black?' or 'what if it's on sale?'"
-                className="flex-1 rounded-2xl px-4 py-3 text-sm text-frock-ink bg-white outline-none"
+                className="flex-1 rounded-none px-4 py-3 text-sm text-frock-ink bg-white outline-none"
                 style={{ border: "1px solid rgba(32,27,21,0.12)" }}
               />
               <button
                 onClick={submitFollowUp}
                 disabled={!followUp.trim()}
-                className="rounded-full px-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
+                className="rounded-none px-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
                 style={{ background: "#D6402B", minWidth: 44 }}
               >
                 ↑
@@ -663,7 +663,7 @@ export default function ShouldIBuyPage() {
             </div>
           )}
           {result.toolTrail && result.toolTrail.length > 0 && (
-            <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(32,27,21,0.08)" }}>
+            <div className="rounded-none overflow-hidden" style={{ border: "1px solid rgba(32,27,21,0.08)" }}>
               <button
                 onClick={() => setTrailOpen((o) => !o)}
                 className="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold text-frock-muted uppercase tracking-widest hover:text-frock-ink transition-colors"
@@ -682,7 +682,7 @@ export default function ShouldIBuyPage() {
                   {result.toolTrail.map((entry, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-frock-muted">
                       <span
-                        className="mt-0.5 shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
+                        className="mt-0.5 shrink-0 w-4 h-4 rounded-none flex items-center justify-center text-white text-[9px] font-bold"
                         style={{ background: "#8a8a8a" }}
                       >
                         {i + 1}

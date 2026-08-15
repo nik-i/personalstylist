@@ -52,7 +52,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full px-3.5 py-1.5 text-sm font-medium transition-all border"
+      className="rounded-none px-3.5 py-1.5 text-sm font-medium transition-all border"
       style={
         selected
           ? { background: "#D6402B", color: "#fff", borderColor: "#D6402B" }
@@ -113,7 +113,7 @@ function SaveButton({
       type="button"
       onClick={onClick}
       disabled={saving}
-      className="w-full rounded-full py-3.5 text-sm font-medium transition-all"
+      className="w-full rounded-none py-3.5 text-sm font-medium transition-all"
       style={
         saved
           ? { background: "#4F7B58", color: "#fff" }
@@ -154,7 +154,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="rounded-xl px-3.5 py-2.5 text-sm text-frock-ink bg-white outline-none w-full"
+      className="rounded-none px-3.5 py-2.5 text-sm text-frock-ink bg-white outline-none w-full"
       style={{ border: "1px solid rgba(32,27,21,0.15)" }}
     />
   );
@@ -177,7 +177,7 @@ function TextArea({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="rounded-xl px-3.5 py-2.5 text-sm text-frock-ink bg-white outline-none w-full resize-none leading-relaxed"
+      className="rounded-none px-3.5 py-2.5 text-sm text-frock-ink bg-white outline-none w-full resize-none leading-relaxed"
       style={{ border: "1px solid rgba(32,27,21,0.15)" }}
     />
   );
@@ -310,7 +310,7 @@ export default function ProfilePage() {
     return (
       <div className="flex flex-col gap-4 py-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-16 rounded-2xl animate-pulse bg-frock-cream-2" />
+          <div key={i} className="h-16 rounded-none animate-pulse bg-frock-cream-2" />
         ))}
       </div>
     );
@@ -329,7 +329,7 @@ export default function ProfilePage() {
 
       {/* ── Section 1: You ── */}
       <div
-        className="bg-white rounded-2xl overflow-hidden mb-3"
+        className="bg-white rounded-none overflow-hidden mb-3"
         style={{ border: "1px solid rgba(32,27,21,0.08)" }}
       >
         <div className="px-4">
@@ -403,7 +403,7 @@ export default function ProfilePage() {
                     key={p}
                     type="button"
                     onClick={() => addHardNo(p)}
-                    className="rounded-full px-3 py-1 text-xs border text-frock-muted transition-colors hover:border-frock-red hover:text-frock-red"
+                    className="rounded-none px-3 py-1 text-xs border text-frock-muted transition-colors hover:border-frock-red hover:text-frock-red"
                     style={{ borderColor: "rgba(32,27,21,0.15)", background: "#FAFAFA" }}
                   >
                     + {p}
@@ -415,7 +415,7 @@ export default function ProfilePage() {
                   {hardNos.map((n) => (
                     <span
                       key={n}
-                      className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
+                      className="flex items-center gap-1 rounded-none px-3 py-1 text-xs font-medium"
                       style={{ background: "#F5DCD3", color: "#D6402B" }}
                     >
                       {n}
@@ -437,13 +437,13 @@ export default function ProfilePage() {
                   onChange={(e) => setHardNoInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addHardNo(hardNoInput)}
                   placeholder="Add your own…"
-                  className="flex-1 rounded-xl px-3.5 py-2 text-sm text-frock-ink bg-white outline-none"
+                  className="flex-1 rounded-none px-3.5 py-2 text-sm text-frock-ink bg-white outline-none"
                   style={{ border: "1px solid rgba(32,27,21,0.15)" }}
                 />
                 <button
                   type="button"
                   onClick={() => addHardNo(hardNoInput)}
-                  className="rounded-xl px-3.5 py-2 text-sm font-medium text-white transition-opacity"
+                  className="rounded-none px-3.5 py-2 text-sm font-medium text-white transition-opacity"
                   style={{ background: "#D6402B" }}
                 >
                   Add
@@ -458,7 +458,7 @@ export default function ProfilePage() {
 
       {/* ── Section 2: Taste & goals ── */}
       <div
-        className="bg-white rounded-2xl overflow-hidden mb-3"
+        className="bg-white rounded-none overflow-hidden mb-3"
         style={{ border: "1px solid rgba(32,27,21,0.08)" }}
       >
         <div className="px-4">
@@ -508,7 +508,7 @@ export default function ProfilePage() {
                     key={g.id}
                     type="button"
                     onClick={() => setGoalType(goalType === g.id ? "" : g.id)}
-                    className="rounded-xl px-4 py-3 text-sm font-medium text-left transition-all"
+                    className="rounded-none px-4 py-3 text-sm font-medium text-left transition-all"
                     style={
                       goalType === g.id
                         ? { background: "#FDF0ED", border: "1.5px solid #D6402B", color: "#D6402B" }

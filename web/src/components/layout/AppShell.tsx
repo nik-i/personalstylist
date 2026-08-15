@@ -116,7 +116,7 @@ export function AppShell({ children, activeView, topLabel, onNavClick }: AppShel
               <button
                 key={item.id}
                 onClick={() => onNavClick(item.id)}
-                className="relative flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors"
+                className="relative flex items-center gap-3 w-full rounded-none px-3 py-2.5 text-left transition-colors"
                 style={
                   isActive
                     ? { background: "rgba(214,64,43,0.18)", color: "#F8F3EB" }
@@ -126,7 +126,7 @@ export function AppShell({ children, activeView, topLabel, onNavClick }: AppShel
                 {isActive && (
                   <span
                     className="absolute left-0 inset-y-0 my-auto"
-                    style={{ width: 3, height: 20, background: "#D6402B", borderRadius: "0 2px 2px 0" }}
+                    style={{ width: 3, height: 20, background: "#D6402B" }}
                   />
                 )}
                 <span className="shrink-0">{item.icon}</span>
