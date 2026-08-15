@@ -99,8 +99,17 @@ const SUGGEST_OUTFIT_TOOL: Anthropic.Tool = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function loadAgentDef(): Promise<{ model: string; systemPrompt: string }> {
-  const agentPath = path.resolve(process.cwd(), ".claude", "agents", "personal-stylist.md");
-  const content = await readFile(agentPath, "utf-8");
+  // Docker: cwd=/app, file at /app/.claude/agents/…
+  // Local dev: cwd=web/, file at ../.claude/agents/…
+  const candidates = [
+    path.resolve(process.cwd(), ".claude", "agents", "personal-stylist.md"),
+    path.resolve(process.cwd(), "..", ".claude", "agents", "personal-stylist.md"),
+  ];
+  let content: string | undefined;
+  for (const p of candidates) {
+    try { content = await readFile(p, "utf-8"); break; } catch { /* try next */ }
+  }
+  if (!content) throw new Error("personal-stylist.md not found");
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) throw new Error("personal-stylist.md: missing or malformed frontmatter");
   const frontmatter = match[1];
