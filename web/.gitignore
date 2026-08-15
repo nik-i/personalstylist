@@ -38,6 +38,12 @@ yarn-error.log*
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# user-uploaded images (runtime data, not source)
+/public/uploads/
+
+# mcp tool call logs (runtime)
+/mcp-server/logs/
+
 # vercel
 .vercel
 

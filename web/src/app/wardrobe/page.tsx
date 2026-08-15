@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MascotAvatar } from "@/components/ui/MascotAvatar";
+import { GarmentDetailPanel, EditFormData } from "@/components/wardrobe/GarmentDetailSheet";
 
 type WardrobeItem = {
   id: string;
@@ -10,6 +11,8 @@ type WardrobeItem = {
   status: string | null;
   color: string | null;
   colorPrimary: string | null;
+  colorSecondary: string | null;
+  undertone: string | null;
   pattern: string | null;
   fabricType: string | null;
   fabric: string | null;
@@ -20,6 +23,19 @@ type WardrobeItem = {
   seasonWeight: string | null;
   category: string | null;
   subcategory: string | null;
+  fit: string | null;
+  neckline: string | null;
+  sleeveLength: string | null;
+  rise: string | null;
+  hemLength: string | null;
+  aesthetic: string | null;
+  occasionTags: string | null;
+  isStatement: boolean | null;
+  colorGroup: string | null;
+  textureFinish: string | null;
+  layeringRole: string | null;
+  printScale: string | null;
+  legOpening: string | null;
   tags: string[];
   imageUrl: string | null;
   thumbnailPath: string | null;
@@ -68,16 +84,6 @@ function formatLabel(s: string | null): string {
   if (!s) return "—";
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
-type SheetState = null | { item: WardrobeItem; mode: "edit" | "confirm-delete" };
-
-type FormState = {
-  itemType: string;
-  color: string;
-  pattern: string;
-  formalityLevel: string;
-  season: string;
-};
 
 function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
@@ -135,9 +141,9 @@ function ItemCard({ item, onTap }: { item: WardrobeItem; onTap: () => void }) {
       style={{ boxShadow: "0 1px 2px rgba(46,35,22,0.06), 0 2px 8px rgba(46,35,22,0.07)" }}
     >
       {img ? (
-        <img src={img} alt={item.itemType} className="w-full object-cover" style={{ height: 112 }} />
+        <img src={img} alt={item.itemType} className="w-full object-cover" style={{ height: 80 }} />
       ) : (
-        <div style={{ height: 112, background: colorToHex(effectiveColor(item)) }} />
+        <div style={{ height: 80, background: colorToHex(effectiveColor(item)) }} />
       )}
       <StatusDot status={item.status} />
       <div className="px-3 py-2 bg-white">
@@ -159,102 +165,10 @@ function GroupSection({ title, items, onTap }: { title: string; items: WardrobeI
         </p>
         <span className="text-xs text-frock-muted">({items.length})</span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-4 gap-2">
         {items.map((item) => <ItemCard key={item.id} item={item} onTap={() => onTap(item)} />)}
       </div>
     </div>
-  );
-}
-
-function FieldInput({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs tracking-widest text-frock-muted uppercase" style={{ letterSpacing: "0.12em" }}>{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? label}
-        className="rounded-xl px-3 py-2.5 text-sm text-frock-ink outline-none transition-colors bg-white"
-        style={{ border: `1px solid ${value ? "#D6402B" : "rgba(32,27,21,0.12)"}` }}
-      />
-    </div>
-  );
-}
-
-function EditSheet({
-  sheet, form, setForm, saving, onSave, onDelete, onDeleteConfirm, onRetryClassify, onClose,
-}: {
-  sheet: SheetState & { item: WardrobeItem };
-  form: FormState;
-  setForm: (f: FormState) => void;
-  saving: boolean;
-  onSave: () => void;
-  onDelete: () => void;
-  onDeleteConfirm: () => void;
-  onRetryClassify: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl px-5 pt-4 pb-8" style={{ maxHeight: "85vh", overflowY: "auto" }}>
-        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "#F0E8DB" }} />
-        <p className="text-xs tracking-widest uppercase text-frock-muted mb-4" style={{ letterSpacing: "0.14em" }}>
-          {sheet.mode === "edit" ? "Edit item" : "Remove item"}
-        </p>
-
-        {sheet.mode === "edit" ? (
-          <>
-            {/* Classified attributes summary */}
-            {sheet.item.status === "classified" && (
-              <div className="mb-4 rounded-xl p-3 text-xs" style={{ background: "#F5F9F5" }}>
-                <p className="font-semibold text-frock-ink mb-1">Classification</p>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-frock-muted">
-                  {sheet.item.category && <span>Category: <span className="text-frock-ink">{formatLabel(sheet.item.category)}</span></span>}
-                  {sheet.item.fabric && <span>Fabric: <span className="text-frock-ink">{formatLabel(sheet.item.fabric)}</span></span>}
-                  {sheet.item.formality && <span>Formality: <span className="text-frock-ink">{formatLabel(sheet.item.formality)}</span></span>}
-                  {sheet.item.seasonWeight && <span>Weight: <span className="text-frock-ink">{formatLabel(sheet.item.seasonWeight)}</span></span>}
-                </div>
-              </div>
-            )}
-            {sheet.item.status === "failed" && (
-              <div className="mb-4 rounded-xl p-3" style={{ background: "#FFF4F2" }}>
-                <p className="text-xs text-frock-muted">Classification failed.</p>
-                <button onClick={onRetryClassify} className="text-xs font-semibold mt-1" style={{ color: "#D6402B" }}>Retry →</button>
-              </div>
-            )}
-            {sheet.item.status === "pending_classification" && (
-              <div className="mb-4 rounded-xl p-3" style={{ background: "#F0E8DB" }}>
-                <p className="text-xs text-frock-muted">Classification in progress…</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <FieldInput label="Type" value={form.itemType} onChange={(v) => setForm({ ...form, itemType: v })} placeholder="e.g. Blazer" />
-              <FieldInput label="Color" value={form.color} onChange={(v) => setForm({ ...form, color: v })} placeholder="e.g. Navy" />
-              <FieldInput label="Pattern" value={form.pattern} onChange={(v) => setForm({ ...form, pattern: v })} placeholder="e.g. Stripe" />
-              <FieldInput label="Formality" value={form.formalityLevel} onChange={(v) => setForm({ ...form, formalityLevel: v })} placeholder="e.g. Smart casual" />
-              <FieldInput label="Season" value={form.season} onChange={(v) => setForm({ ...form, season: v })} placeholder="e.g. All year" />
-            </div>
-
-            <button onClick={onSave} disabled={saving || !form.itemType.trim()} className="w-full rounded-full py-4 font-medium text-base text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-40" style={{ background: "#D6402B" }}>
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-            <div className="h-px my-4" style={{ background: "#F5DCD3" }} />
-            <button onClick={onDelete} className="w-full text-sm text-center text-frock-muted hover:text-frock-ink transition-colors py-1">Remove from wardrobe</button>
-          </>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-frock-ink font-medium text-center">Remove this item?</p>
-            <p className="text-xs text-frock-muted text-center leading-relaxed">It will stop appearing in outfits and recommendations immediately.</p>
-            <button onClick={onDeleteConfirm} disabled={saving} className="w-full rounded-full py-4 font-medium text-base text-white transition-opacity disabled:opacity-40" style={{ background: "#D6402B" }}>
-              {saving ? "Removing…" : "Yes, remove"}
-            </button>
-            <button onClick={onDelete} className="text-sm text-center text-frock-muted hover:text-frock-ink transition-colors py-1">Cancel</button>
-          </div>
-        )}
-      </div>
-    </>
   );
 }
 
@@ -267,9 +181,7 @@ export default function WardrobePage() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [patternFilter, setPatternFilter] = useState("All");
   const [fabricFilter, setFabricFilter] = useState("All");
-  const [sheet, setSheet] = useState<SheetState>(null);
-  const [form, setForm] = useState<FormState>({ itemType: "", color: "", pattern: "", formalityLevel: "", season: "" });
-  const [saving, setSaving] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
 
   useEffect(() => {
     fetch("/api/wardrobe")
@@ -323,42 +235,44 @@ export default function WardrobePage() {
 
   const groups = groupItems();
 
-  function openSheet(item: WardrobeItem) {
-    setForm({ itemType: item.itemType, color: effectiveColor(item) ?? "", pattern: item.pattern ?? "", formalityLevel: effectiveFormality(item) ?? "", season: item.season ?? "" });
-    setSheet({ item, mode: "edit" });
+  async function handleSave(data: EditFormData) {
+    if (!selectedItem) return;
+    await fetch(`/api/wardrobe/${selectedItem.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        itemType: data.itemType || undefined,
+        color: data.color || undefined,
+        pattern: data.pattern || undefined,
+        formalityLevel: data.formalityLevel || undefined,
+        season: data.season || undefined,
+      }),
+    });
+    const updated = {
+      ...selectedItem,
+      itemType: data.itemType || selectedItem.itemType,
+      color: data.color || selectedItem.color,
+      pattern: data.pattern || selectedItem.pattern,
+      formalityLevel: data.formalityLevel || selectedItem.formalityLevel,
+      season: data.season || selectedItem.season,
+    };
+    setItems((prev) => prev.map((i) => i.id === selectedItem.id ? updated : i));
+    setSelectedItem(updated);
   }
-  function closeSheet() { if (!saving) setSheet(null); }
 
-  async function handleSave() {
-    if (!sheet) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/wardrobe/${sheet.item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemType: form.itemType || undefined, color: form.color || undefined, pattern: form.pattern || undefined, formalityLevel: form.formalityLevel || undefined, season: form.season || undefined }),
-      });
-      setItems((prev) => prev.map((i) => i.id === sheet.item.id ? { ...i, itemType: form.itemType || i.itemType, color: form.color || i.color, pattern: form.pattern || i.pattern, formalityLevel: form.formalityLevel || i.formalityLevel, season: form.season || i.season } : i));
-      setSheet(null);
-    } finally { setSaving(false); }
+  async function handleDelete() {
+    if (!selectedItem) return;
+    await fetch(`/api/wardrobe/${selectedItem.id}`, { method: "DELETE" });
+    setItems((prev) => prev.filter((i) => i.id !== selectedItem.id));
+    setSelectedItem(null);
   }
 
-  async function handleRetryClassify() {
-    if (!sheet) return;
-    const id = sheet.item.id;
-    setSheet(null);
-    await fetch(`/api/garments/${id}/classify`, { method: "POST" });
+  function handleRetryClassify() {
+    if (!selectedItem) return;
+    const id = selectedItem.id;
+    setSelectedItem(null);
+    fetch(`/api/garments/${id}/classify`, { method: "POST" });
     setItems((prev) => prev.map((i) => i.id === id ? { ...i, status: "pending_classification" } : i));
-  }
-
-  async function handleDeleteConfirm() {
-    if (!sheet) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/wardrobe/${sheet.item.id}`, { method: "DELETE" });
-      setItems((prev) => prev.filter((i) => i.id !== sheet.item.id));
-      setSheet(null);
-    } finally { setSaving(false); }
   }
 
   return (
@@ -423,64 +337,70 @@ export default function WardrobePage() {
         </div>
       )}
 
-      {/* Content */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-2xl overflow-hidden" style={{ boxShadow: "0 1px 2px rgba(46,35,22,0.06)" }}>
-              <div className="animate-pulse bg-frock-cream-2" style={{ height: 112 }} />
-              <div className="px-3 py-2 bg-white"><div className="h-3 bg-frock-cream-2 rounded animate-pulse w-3/4" /></div>
+      {/* Content: always 4/6 grid + 2/6 detail panel */}
+      <div className="flex gap-3 items-start">
+        {/* Left: 4-column grid (4/6 of width) */}
+        <div style={{ flex: "0 0 66.667%", minWidth: 0 }}>
+          {loading ? (
+            <div className="grid grid-cols-4 gap-2">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="rounded-2xl overflow-hidden" style={{ boxShadow: "0 1px 2px rgba(46,35,22,0.06)" }}>
+                  <div className="animate-pulse bg-frock-cream-2" style={{ height: 80 }} />
+                  <div className="px-3 py-2 bg-white"><div className="h-3 bg-frock-cream-2 rounded animate-pulse w-3/4" /></div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "#F0E8DB" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M6 7h12l-1.5 11a1 1 0 0 1-1 .9H8.5a1 1 0 0 1-1-.9L6 7z" stroke="#8C8375" strokeWidth="1.5" />
-              <path d="M3 7h18" stroke="#8C8375" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#8C8375" strokeWidth="1.5" />
-            </svg>
-          </div>
-          <h2 className="text-xl text-frock-ink" style={{ fontFamily: "var(--font-serif)" }}>
-            {items.length === 0 ? "Nothing here yet" : "No items match"}
-          </h2>
-          <p className="text-sm text-frock-muted leading-relaxed max-w-xs">
-            {items.length === 0
-              ? "Upload photos one garment at a time to get started."
-              : "Try clearing some filters."}
-          </p>
-          {items.length === 0 && (
-            <Link href="/wardrobe/upload" className="mt-2 rounded-full px-5 py-3 text-sm font-medium text-white" style={{ background: "#D6402B" }}>
-              Add clothes →
-            </Link>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "#F0E8DB" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 7h12l-1.5 11a1 1 0 0 1-1 .9H8.5a1 1 0 0 1-1-.9L6 7z" stroke="#8C8375" strokeWidth="1.5" />
+                  <path d="M3 7h18" stroke="#8C8375" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#8C8375" strokeWidth="1.5" />
+                </svg>
+              </div>
+              <h2 className="text-xl text-frock-ink" style={{ fontFamily: "var(--font-serif)" }}>
+                {items.length === 0 ? "Nothing here yet" : "No items match"}
+              </h2>
+              <p className="text-sm text-frock-muted leading-relaxed max-w-xs">
+                {items.length === 0
+                  ? "Upload photos one garment at a time to get started."
+                  : "Try clearing some filters."}
+              </p>
+              {items.length === 0 && (
+                <Link href="/wardrobe/upload" className="mt-2 rounded-full px-5 py-3 text-sm font-medium text-white" style={{ background: "#D6402B" }}>
+                  Add clothes →
+                </Link>
+              )}
+            </div>
+          ) : groupMode === "none" ? (
+            <div className="grid grid-cols-4 gap-2">
+              {filtered.map((item) => <ItemCard key={item.id} item={item} onTap={() => setSelectedItem(item)} />)}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              {groups.map((g) => (
+                <GroupSection key={g.key} title={g.key} items={g.items} onTap={(item) => setSelectedItem(item)} />
+              ))}
+            </div>
           )}
         </div>
-      ) : groupMode === "none" ? (
-        <div className="grid grid-cols-2 gap-3">
-          {filtered.map((item) => <ItemCard key={item.id} item={item} onTap={() => openSheet(item)} />)}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          {groups.map((g) => (
-            <GroupSection key={g.key} title={g.key} items={g.items} onTap={openSheet} />
-          ))}
-        </div>
-      )}
 
-      {sheet && (
-        <EditSheet
-          sheet={sheet as SheetState & { item: WardrobeItem }}
-          form={form}
-          setForm={setForm}
-          saving={saving}
-          onSave={handleSave}
-          onDelete={() => setSheet(sheet.mode === "confirm-delete" ? { item: sheet.item, mode: "edit" } : { item: sheet.item, mode: "confirm-delete" })}
-          onDeleteConfirm={handleDeleteConfirm}
-          onRetryClassify={handleRetryClassify}
-          onClose={closeSheet}
-        />
-      )}
+        {/* Right: 2/6 always reserved — shows selected item */}
+        <div style={{ flex: "0 0 33.333%", minWidth: 0 }}>
+          {selectedItem && (
+            <div className="sticky top-4">
+              <GarmentDetailPanel
+                item={selectedItem}
+                onClose={() => setSelectedItem(null)}
+                onSave={handleSave}
+                onDelete={handleDelete}
+                onRetryClassify={handleRetryClassify}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef } from "react";
 
-export function ProfileMenu() {
+export function ProfileMenu({ placement = "bottom-right" }: { placement?: "bottom-right" | "top-right" } = {}) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,8 +51,14 @@ export function ProfileMenu() {
         <div
           onMouseEnter={show}
           onMouseLeave={hide}
-          className="absolute right-0 top-10 z-50 min-w-[140px] rounded-xl py-1 shadow-lg"
-          style={{ background: "#fff", border: "1px solid rgba(32,27,21,0.1)" }}
+          className="absolute z-50 min-w-[140px] rounded-xl py-1 shadow-lg"
+          style={{
+            background: "#fff",
+            border: "1px solid rgba(32,27,21,0.1)",
+            ...(placement === "top-right"
+              ? { bottom: "calc(100% + 8px)", left: 0 }
+              : { top: "calc(100% + 8px)", right: 0 }),
+          }}
         >
           {name && (
             <p className="px-4 py-2 text-xs text-frock-muted truncate max-w-[180px]">{name}</p>

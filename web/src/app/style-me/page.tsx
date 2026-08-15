@@ -5,7 +5,7 @@ import { MascotAvatar } from "@/components/ui/MascotAvatar";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Step = "occasion" | "when" | "venue" | "daily" | "loading" | "result";
+type Step = "occasion" | "loading" | "result";
 
 type StyleMePiece = {
   id: string;
@@ -42,21 +42,6 @@ function wmoToDescription(code: number): string {
   return "Cloudy";
 }
 
-function occasionDayIndex(preset: string, date: string): number {
-  if (preset === "tonight") return 0;
-  if (preset === "tomorrow") return 1;
-  if (preset === "this-weekend") {
-    const day = new Date().getDay();
-    const daysToSat = (6 - day + 7) % 7;
-    return Math.min(daysToSat, 6);
-  }
-  if (date) {
-    const diff = Math.round((new Date(date).getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000);
-    return Math.max(0, Math.min(6, diff));
-  }
-  return 0;
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const COLOR_HEX: Record<string, string> = {
@@ -74,36 +59,6 @@ function colorToHex(color?: string | null): string {
   if (!color) return "#E8DDD2";
   if (color.startsWith("#")) return color;
   return COLOR_HEX[color.toLowerCase()] ?? "#E8DDD2";
-}
-
-// ── Chip component ────────────────────────────────────────────────────────────
-
-function Chip({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="rounded-full px-4 py-2.5 text-sm font-medium transition-all active:scale-[0.97]"
-      style={
-        selected
-          ? { background: "#D6402B", color: "#FFFFFF" }
-          : {
-              background: "#FFFFFF",
-              color: "#201B15",
-              border: "1px solid rgba(32,27,21,0.12)",
-            }
-      }
-    >
-      {label}
-    </button>
-  );
 }
 
 // ── Step heading ─────────────────────────────────────────────────────────────
@@ -167,49 +122,57 @@ function NotePill({ text, icon }: { text: string; icon: string }) {
   );
 }
 
+// ── Confidence bar ────────────────────────────────────────────────────────────
+
+function ConfidenceBar({ score }: { score: number }) {
+  const pct = Math.round((Math.min(10, Math.max(0, score)) / 10) * 100);
+  const label =
+    pct >= 80 ? "Strong match" : pct >= 60 ? "Good match" : "Partial match";
+  return (
+    <div className="flex items-center gap-2.5">
+      <div
+        className="flex-1 h-1 rounded-full overflow-hidden"
+        style={{ background: "rgba(32,27,21,0.09)" }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${pct}%`,
+            background:
+              pct >= 80 ? "#D6402B" : pct >= 60 ? "#C4942A" : "#8C8375",
+          }}
+        />
+      </div>
+      <span className="text-xs text-frock-muted shrink-0 tabular-nums">
+        {score}/10
+      </span>
+      <span
+        className="text-xs shrink-0"
+        style={{
+          color: pct >= 80 ? "#D6402B" : pct >= 60 ? "#C4942A" : "#8C8375",
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ── Hint tags ─────────────────────────────────────────────────────────────────
+
+const HINT_TAGS = [
+  "Location",
+  "Type of event",
+  "Indoors or outdoors",
+  "Day & time of day",
+  "How you want to feel",
+];
+
 // ── Main page ─────────────────────────────────────────────────────────────────
-
-const OCCASION_OPTIONS = [
-  { label: "Work",    value: "work"    },
-  { label: "Casual",  value: "casual"  },
-  { label: "Dinner",  value: "dinner"  },
-  { label: "Wedding", value: "wedding" },
-  { label: "Party",   value: "party"   },
-  { label: "Brunch",  value: "brunch"  },
-];
-
-const WHEN_PRESETS = [
-  { label: "Tonight",      value: "tonight"      },
-  { label: "Tomorrow",     value: "tomorrow"     },
-  { label: "This weekend", value: "this-weekend" },
-];
-
-const VENUE_OPTIONS = [
-  { label: "Indoors",     value: "indoors" as const },
-  { label: "Outdoors",    value: "outdoors" as const },
-  { label: "Mix of both", value: "mix" as const },
-];
-
-const DAILY_MOODS = ["Fresh & ready", "Low-effort", "Bold", "Confident", "Cozy"];
-
-const OCCASION_LABELS: Record<string, string> = {
-  work: "work", casual: "a casual day", dinner: "dinner",
-  wedding: "a wedding", party: "a party", brunch: "brunch",
-};
 
 export default function StyleMePage() {
   const [step, setStep]               = useState<Step>("occasion");
-  const [occasion, setOccasion]       = useState("");
-  const [occasionText, setOccasionText] = useState("");
-  const [showOther, setShowOther]     = useState(false);
-  const [whenPreset, setWhenPreset]   = useState("");
-  const [whenDate, setWhenDate]       = useState("");
-  const [whenTime, setWhenTime]       = useState("afternoon");
-  const [showCustomDate, setShowCustomDate] = useState(false);
-  const [venue, setVenue]             = useState<"indoors" | "outdoors" | "mix">("indoors");
-  const [pendingVenue, setPendingVenue] = useState<"indoors" | "outdoors" | "mix">("indoors");
-  const [dailyMood, setDailyMood]     = useState("");
-  const [dailyNote, setDailyNote]     = useState("");
+  const [contextText, setContextText] = useState("");
   const [result, setResult]           = useState<StyleMeResult | null>(null);
   const [error, setError]             = useState<string | null>(null);
   const [geo, setGeo]                 = useState<GeoState>(null);
@@ -217,6 +180,7 @@ export default function StyleMePage() {
   const [feedbackText, setFeedbackText] = useState("");
   const [isRefining, setIsRefining]   = useState(false);
   const [suggestionHistory, setSuggestionHistory] = useState<string[]>([]);
+  const [outfitIndex, setOutfitIndex]             = useState(0);
 
   // Request location silently on mount; reverse-geocode for city name
   useEffect(() => {
@@ -237,51 +201,11 @@ export default function StyleMePage() {
     }, () => { /* denied — weather just won't show */ });
   }, []);
 
-  // ── Step handlers ───────────────────────────────────────────────────────────
-
-  function selectOccasion(value: string) {
-    setOccasion(value);
-    setShowOther(false);
-    setStep("when");
-  }
-
-  function submitOther() {
-    if (!occasionText.trim()) return;
-    setOccasion(occasionText.trim());
-    setStep("when");
-  }
-
-  function selectWhenPreset(value: string) {
-    setWhenPreset(value);
-    setShowCustomDate(false);
-    setStep("venue");
-  }
-
-  function submitCustomDate() {
-    if (!whenDate) return;
-    setWhenPreset("");
-    setStep("venue");
-  }
-
-  function selectVenue(value: "indoors" | "outdoors" | "mix") {
-    setPendingVenue(value);
-    setVenue(value);
-    setStep("daily");
-  }
+  const canSubmit = contextText.trim() !== "";
 
   async function submitWithDailyContext() {
     setStep("loading");
     setError(null);
-
-    const effectiveOccasion = occasion || occasionText;
-    const when: { preset?: string; date?: string; time?: string } = {};
-    if (whenPreset) when.preset = whenPreset;
-    if (whenDate)   when.date   = whenDate;
-    if (whenTime)   when.time   = whenTime;
-
-    const dailyContext: { mood?: string; note?: string } = {};
-    if (dailyMood) dailyContext.mood = dailyMood;
-    if (dailyNote.trim()) dailyContext.note = dailyNote.trim();
 
     try {
       const [data] = await Promise.all([
@@ -289,10 +213,7 @@ export default function StyleMePage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            occasion: effectiveOccasion,
-            when,
-            indoorOutdoor: pendingVenue,
-            dailyContext: Object.keys(dailyContext).length > 0 ? dailyContext : undefined,
+            freeText: contextText.trim(),
             location: geo ? { lat: geo.lat, lon: geo.lon, city: geo.city } : undefined,
           }),
         }).then((r) => r.json() as Promise<StyleMeResult>),
@@ -304,11 +225,10 @@ export default function StyleMePage() {
             )
               .then((r) => r.json())
               .then((w) => {
-                const idx = occasionDayIndex(whenPreset, whenDate);
                 const daily = w?.daily;
-                const tMin = daily?.temperature_2m_min?.[idx];
-                const tMax = daily?.temperature_2m_max?.[idx];
-                const code = daily?.weathercode?.[idx] ?? daily?.weather_code?.[idx];
+                const tMin = daily?.temperature_2m_min?.[0];
+                const tMax = daily?.temperature_2m_max?.[0];
+                const code = daily?.weathercode?.[0] ?? daily?.weather_code?.[0];
                 if (tMin != null && tMax != null && !isNaN(tMin) && !isNaN(tMax)) {
                   setWeather({
                     tempMin: Math.round(tMin),
@@ -323,33 +243,25 @@ export default function StyleMePage() {
 
       const firstSummary = data.outfits?.[0]?.summary;
       if (firstSummary) setSuggestionHistory([firstSummary]);
+      setOutfitIndex(0);
       setResult(data);
       setStep("result");
     } catch {
       setError("Something went wrong. Please try again.");
-      setStep("daily");
+      setStep("occasion");
     }
   }
 
   function reset() {
     setStep("occasion");
-    setOccasion("");
-    setOccasionText("");
-    setShowOther(false);
-    setWhenPreset("");
-    setWhenDate("");
-    setWhenTime("afternoon");
-    setShowCustomDate(false);
-    setVenue("indoors");
-    setPendingVenue("indoors");
-    setDailyMood("");
-    setDailyNote("");
+    setContextText("");
     setResult(null);
     setError(null);
     setWeather(null);
     setFeedbackText("");
     setIsRefining(false);
     setSuggestionHistory([]);
+    setOutfitIndex(0);
   }
 
   async function submitFeedback() {
@@ -358,25 +270,12 @@ export default function StyleMePage() {
     setIsRefining(true);
     setFeedbackText("");
 
-    const effectiveOccasion = occasion || occasionText;
-    const when: { preset?: string; date?: string; time?: string } = {};
-    if (whenPreset) when.preset = whenPreset;
-    if (whenDate)   when.date   = whenDate;
-    if (whenTime)   when.time   = whenTime;
-
-    const dailyContext: { mood?: string; note?: string } = {};
-    if (dailyMood) dailyContext.mood = dailyMood;
-    if (dailyNote.trim()) dailyContext.note = dailyNote.trim();
-
     try {
       const data = await fetch("/api/style-me", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          occasion: effectiveOccasion,
-          when,
-          indoorOutdoor: pendingVenue,
-          dailyContext: Object.keys(dailyContext).length > 0 ? dailyContext : undefined,
+          freeText: contextText.trim(),
           location: geo ? { lat: geo.lat, lon: geo.lon, city: geo.city } : undefined,
           feedback: text,
           previousSuggestion: suggestionHistory.length > 0 ? { summaries: suggestionHistory } : undefined,
@@ -385,9 +284,9 @@ export default function StyleMePage() {
 
       const newSummary = data.outfits?.[0]?.summary;
       if (newSummary) setSuggestionHistory((h) => [...h, newSummary]);
+      setOutfitIndex(0);
       setResult(data);
     } catch {
-      // silently restore input on error so user can retry
       setFeedbackText(text);
     } finally {
       setIsRefining(false);
@@ -399,213 +298,49 @@ export default function StyleMePage() {
   if (step === "occasion") {
     return (
       <div className="max-w-xl animate-[frkFade_0.3s_ease]">
-        <StepHeading>What&rsquo;s the occasion?</StepHeading>
+        <StepHeading>Plan your look</StepHeading>
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {OCCASION_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => selectOccasion(opt.value)}
-              className="rounded-2xl px-4 py-4 text-sm font-medium text-center transition-all hover:shadow-sm active:scale-[0.98]"
-              style={
-                occasion === opt.value
-                  ? { background: "#D6402B", color: "#fff" }
-                  : { background: "#fff", color: "#201B15", border: "1px solid rgba(32,27,21,0.12)" }
-              }
+        <textarea
+          autoFocus
+          rows={6}
+          value={contextText}
+          onChange={(e) => setContextText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSubmit) {
+              e.preventDefault();
+              submitWithDailyContext();
+            }
+          }}
+          placeholder="Describe your event — the more detail, the better the outfit."
+          className="w-full rounded-2xl px-5 py-4 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
+          style={{ border: "1px solid rgba(32,27,21,0.12)" }}
+        />
+
+        <p className="text-xs text-frock-muted mt-3 mb-2">Include details like:</p>
+        <div className="flex flex-wrap gap-2 mb-8">
+          {HINT_TAGS.map((hint) => (
+            <span
+              key={hint}
+              className="rounded-full px-3 py-1.5 text-xs text-frock-muted"
+              style={{ background: "#F5EDE5", border: "1px solid rgba(32,27,21,0.07)" }}
             >
-              {opt.label}
-            </button>
+              {hint}
+            </span>
           ))}
         </div>
-
-        {!showOther ? (
-          <button
-            onClick={() => setShowOther(true)}
-            className="text-sm text-frock-muted hover:text-frock-ink transition-colors"
-          >
-            + Other occasion
-          </button>
-        ) : (
-          <div className="flex gap-3 mt-1">
-            <input
-              autoFocus
-              value={occasionText}
-              onChange={(e) => setOccasionText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitOther()}
-              placeholder="e.g. Job interview, Birthday dinner…"
-              className="flex-1 rounded-2xl px-4 py-3 text-sm text-frock-ink outline-none bg-white"
-              style={{ border: "1px solid rgba(32,27,21,0.15)" }}
-            />
-            <button
-              onClick={submitOther}
-              disabled={!occasionText.trim()}
-              className="rounded-full px-6 py-3 text-sm font-medium text-white transition-opacity disabled:opacity-40"
-              style={{ background: "#D6402B" }}
-            >
-              Continue
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (step === "when") {
-    return (
-      <div className="max-w-xl animate-[frkFade_0.3s_ease]">
-        <StepHeading>When is it?</StepHeading>
-
-        <div className="flex flex-wrap gap-3 mb-4">
-          {WHEN_PRESETS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => selectWhenPreset(opt.value)}
-              className="rounded-2xl px-6 py-4 text-sm font-medium transition-all hover:shadow-sm active:scale-[0.98] bg-white"
-              style={{ border: "1px solid rgba(32,27,21,0.12)" }}
-            >
-              {opt.label}
-            </button>
-          ))}
-
-          {!showCustomDate ? (
-            <button
-              onClick={() => setShowCustomDate(true)}
-              className="rounded-2xl px-6 py-4 text-sm font-medium text-frock-muted transition-all bg-white"
-              style={{ border: "1px solid rgba(32,27,21,0.08)" }}
-            >
-              Another time…
-            </button>
-          ) : null}
-        </div>
-
-        {showCustomDate && (
-          <div
-            className="rounded-2xl px-6 py-5 bg-white flex flex-col gap-4 max-w-sm"
-            style={{ border: "1px solid rgba(32,27,21,0.12)" }}
-          >
-            <div className="flex flex-col gap-1">
-              <label className="text-xs uppercase tracking-widest text-frock-muted" style={{ letterSpacing: "0.12em" }}>
-                Date
-              </label>
-              <input
-                type="date"
-                value={whenDate}
-                onChange={(e) => setWhenDate(e.target.value)}
-                className="text-sm text-frock-ink bg-transparent outline-none"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs uppercase tracking-widest text-frock-muted" style={{ letterSpacing: "0.12em" }}>
-                Time of day
-              </label>
-              <div className="flex gap-2">
-                {(["morning", "afternoon", "evening"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setWhenTime(t)}
-                    className="rounded-full px-4 py-1.5 text-xs font-medium transition-all capitalize"
-                    style={
-                      whenTime === t
-                        ? { background: "#D6402B", color: "#fff" }
-                        : { background: "#F0E8DB", color: "#554C41" }
-                    }
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button
-              onClick={submitCustomDate}
-              disabled={!whenDate}
-              className="rounded-full py-3 text-sm font-medium text-white transition-opacity disabled:opacity-40"
-              style={{ background: "#D6402B" }}
-            >
-              Continue
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (step === "venue") {
-    return (
-      <div className="max-w-xl animate-[frkFade_0.3s_ease]">
-        <StepHeading>Indoors or outdoors?</StepHeading>
-
-        <div className="flex gap-3">
-          {VENUE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => selectVenue(opt.value)}
-              className="flex-1 rounded-2xl px-4 py-5 text-sm font-medium text-center transition-all hover:shadow-sm active:scale-[0.98] bg-white"
-              style={{ border: "1px solid rgba(32,27,21,0.12)" }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (step === "daily") {
-    return (
-      <div className="max-w-2xl animate-[frkFade_0.3s_ease]">
-        <StepHeading>Anything to know before I style you?</StepHeading>
 
         {error && (
-          <p className="text-sm mb-6" style={{ color: "#D6402B" }}>{error}</p>
+          <p className="text-sm mb-4" style={{ color: "#D6402B" }}>{error}</p>
         )}
 
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div className="flex flex-col gap-3">
-            <p className="text-xs uppercase tracking-widest text-frock-muted" style={{ letterSpacing: "0.12em" }}>
-              How are you feeling today?
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {DAILY_MOODS.map((mood) => (
-                <Chip
-                  key={mood}
-                  label={mood}
-                  selected={dailyMood === mood}
-                  onClick={() => setDailyMood(dailyMood === mood ? "" : mood)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <p className="text-xs uppercase tracking-widest text-frock-muted" style={{ letterSpacing: "0.12em" }}>
-              Agenda or constraints
-            </p>
-            <textarea
-              rows={4}
-              value={dailyNote}
-              onChange={(e) => setDailyNote(e.target.value)}
-              placeholder="e.g. board meeting at 2pm, grey blazer in the wash, need the navy shoes…"
-              className="rounded-2xl px-4 py-3 text-sm text-frock-ink bg-white outline-none resize-none leading-relaxed"
-              style={{ border: "1px solid rgba(32,27,21,0.12)" }}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={submitWithDailyContext}
-            className="rounded-full px-10 py-3.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-            style={{ background: "#D6402B" }}
-          >
-            Style me
-          </button>
-          <button
-            onClick={submitWithDailyContext}
-            className="text-sm text-frock-muted hover:text-frock-ink transition-colors"
-          >
-            Skip
-          </button>
-        </div>
+        <button
+          onClick={submitWithDailyContext}
+          disabled={!canSubmit}
+          className="rounded-full px-10 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-40 hover:opacity-90"
+          style={{ background: "#D6402B" }}
+        >
+          Style me
+        </button>
       </div>
     );
   }
@@ -661,7 +396,7 @@ export default function StyleMePage() {
       );
     }
 
-    const topOutfit = result.outfits?.[0];
+    const topOutfit = result.outfits?.[outfitIndex] ?? result.outfits?.[0];
 
     if (!topOutfit || topOutfit.pieces.length === 0) {
       return (
@@ -684,10 +419,9 @@ export default function StyleMePage() {
       );
     }
 
-    const occasionDisplay = OCCASION_LABELS[occasion] ?? occasion;
     const seasonDisplay = result.context?.season ?? "";
     const formality = result.context?.formality ?? "";
-    const altCount = (result.outfits?.length ?? 1) - 1;
+    const totalOutfits = result.outfits?.length ?? 1;
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 animate-[frkFade_0.3s_ease]">
@@ -701,7 +435,7 @@ export default function StyleMePage() {
                 className="text-2xl text-frock-ink leading-snug"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
-                Here&rsquo;s your look for {occasionDisplay}
+                Here&rsquo;s your look
               </h2>
             </div>
 
@@ -734,6 +468,10 @@ export default function StyleMePage() {
             )}
           </div>
 
+          {totalOutfits === 1 && topOutfit.score != null && (
+            <ConfidenceBar score={topOutfit.score} />
+          )}
+
           {(result.blazerNote || result.footwearNote || result.weddingColorNote) && (
             <div className="flex flex-col gap-2">
               {result.weddingColorNote && <NotePill icon="🤍" text={result.weddingColorNote} />}
@@ -742,10 +480,50 @@ export default function StyleMePage() {
             </div>
           )}
 
-          {altCount > 0 && (
-            <p className="text-xs text-frock-muted leading-relaxed">
-              I also found {altCount} other combination{altCount > 1 ? "s" : ""} from your wardrobe if you want to see them.
-            </p>
+          {totalOutfits > 1 && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setOutfitIndex((i) => Math.max(0, i - 1))}
+                  disabled={outfitIndex === 0}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-opacity disabled:opacity-25 hover:opacity-70"
+                  style={{ background: "#F0E8DB", color: "#554C41" }}
+                >
+                  ←
+                </button>
+                <div className="flex gap-1.5">
+                  {result.outfits!.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setOutfitIndex(i)}
+                      className="rounded-full transition-all"
+                      style={{
+                        width: i === outfitIndex ? 20 : 7,
+                        height: 7,
+                        background: i === outfitIndex ? "#D6402B" : "rgba(32,27,21,0.15)",
+                      }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setOutfitIndex((i) => Math.min(totalOutfits - 1, i + 1))}
+                  disabled={outfitIndex === totalOutfits - 1}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-opacity disabled:opacity-25 hover:opacity-70"
+                  style={{ background: "#F0E8DB", color: "#554C41" }}
+                >
+                  →
+                </button>
+                <span className="text-xs text-frock-muted">
+                  Look {outfitIndex + 1} of {totalOutfits}
+                </span>
+              </div>
+              {topOutfit.summary && (
+                <p className="text-xs text-frock-muted leading-relaxed italic">{topOutfit.summary}</p>
+              )}
+              {topOutfit.score != null && (
+                <ConfidenceBar score={topOutfit.score} />
+              )}
+            </div>
           )}
 
           {/* Feedback chat */}

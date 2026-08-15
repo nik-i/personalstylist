@@ -116,6 +116,15 @@ model WardrobeItem {
   sleeveLength   String?
   rise           String?
   hemLength      String?
+  // ── Styling metadata (populated by classify.ts) ──
+  aesthetic      String?
+  occasionTags   String   @default("[]")
+  isStatement    Boolean  @default(false)
+  colorGroup     String?
+  textureFinish  String?
+  layeringRole   String?
+  printScale     String?
+  legOpening     String?
 
   outfitItems OutfitItem[]
   feedback    Feedback[]

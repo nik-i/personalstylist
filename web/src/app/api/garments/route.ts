@@ -80,14 +80,25 @@ export async function POST(req: NextRequest) {
         sleeveLength: attrs.sleeve_length,
         rise: attrs.rise,
         hemLength: attrs.hem_length,
+        aesthetic: attrs.aesthetic,
+        occasionTags: JSON.stringify(attrs.occasion_tags),
+        isStatement: attrs.is_statement,
+        colorGroup: attrs.color_group,
+        textureFinish: attrs.texture_finish,
+        layeringRole: attrs.layering_role,
+        printScale: attrs.print_scale,
+        legOpening: attrs.leg_opening,
       },
     });
-  } catch {
+  } catch (err) {
     classifyStatus = "failed";
+    console.error("[classify] failed for garment", garment.id, err);
     await prisma.wardrobeItem.update({
       where: { id: garment.id },
       data: { status: "failed" },
     });
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ id: garment.id, imagePath, thumbnailPath, status: classifyStatus, detail }, { status: 201 });
   }
 
   return NextResponse.json({ id: garment.id, imagePath, thumbnailPath, status: classifyStatus }, { status: 201 });
@@ -109,5 +120,6 @@ export async function GET() {
     ...i,
     fit: (() => { try { return JSON.parse(i.fit); } catch { return []; } })(),
     tags: (() => { try { return JSON.parse(i.tags); } catch { return []; } })(),
+    occasionTags: (() => { try { return JSON.parse(i.occasionTags); } catch { return []; } })(),
   })));
 }
